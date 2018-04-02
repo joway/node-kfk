@@ -1,5 +1,8 @@
 # Node Rdkafka Promise
 
+![npm](https://img.shields.io/npm/v/node-rdkafka-promise.svg)
+![npm](https://img.shields.io/npm/dt/node-rdkafka-promise.svg)
+
 The high-level node kafka client with Promise support .
 
 ## Usage
