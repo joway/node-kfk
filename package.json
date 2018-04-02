@@ -1,0 +1,46 @@
+{
+  "name": "node-rdkafka-promise",
+  "version": "0.0.1",
+  "description": "The high-level node kafka client with Promise support .",
+  "main": "dist/src/index.js",
+  "license": "MIT License",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joway/node-rdkafka-promise.git"
+  },
+  "scripts": {
+    "compile": "tsc",
+    "clean": "rm -rf dist",
+    "purge": "rm -rf package-lock.json node_modules && npm run clean",
+    "build": "npm run clean && npm run compile",
+    "lint": "tslint --project .",
+    "test": "npm run lint && npm run compile && NODE_ENV=ci ava dist/tests",
+    "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
+    "pub": "npm run build && npm publish"
+  },
+  "precommit": [
+    "prettier"
+  ],
+  "author": "joway",
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "lodash": "4.17.5",
+    "node-rdkafka": "^2.3.1"
+  },
+  "devDependencies": {
+    "@types/bluebird": "^3.5.20",
+    "@types/lodash": "^4.14.106",
+    "@types/node": "8.0.46",
+    "@types/sinon": "2.3.6",
+    "@types/supertest": "2.0.3",
+    "ava": "0.24.0",
+    "nock": "9.0.24",
+    "nodemon": "1.12.1",
+    "precommit": "1.2.2",
+    "sinon": "4.0.1",
+    "supertest": "3.0.0",
+    "tslint": "5.9.1",
+    "tslint-jike-node": "0.0.14",
+    "typescript": "2.7.2"
+  }
+}
