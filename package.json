@@ -1,8 +1,9 @@
 {
   "name": "node-rdkafka-promise",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The high-level node kafka client with Promise support .",
   "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "license": "MIT License",
   "repository": {
     "type": "git",
@@ -23,13 +24,13 @@
   ],
   "author": "joway",
   "dependencies": {
+    "@types/bluebird": "^3.5.20",
+    "@types/lodash": "^4.14.106",
     "bluebird": "^3.5.1",
     "lodash": "4.17.5",
     "node-rdkafka": "^2.3.1"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.20",
-    "@types/lodash": "^4.14.106",
     "@types/node": "8.0.46",
     "@types/sinon": "2.3.6",
     "@types/supertest": "2.0.3",
