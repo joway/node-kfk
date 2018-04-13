@@ -17,13 +17,9 @@ export class KafkaProducer {
   constructor(conf: any, topicConf: any = {}) {
     this.ready = false
     this.producer = new Kafka.Producer(conf, topicConf)
-
-    this.producer.on('event.error', err => {
-      console.error(err)
-    })
   }
 
-  connect(metadataOptions: any = {}) {
+  async connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
       this.producer.connect(metadataOptions, (err, data) => {
         if (err) {
@@ -37,13 +33,13 @@ export class KafkaProducer {
     })
   }
 
-  produce(topic: string, partition: number, message: string, key?: string, timestamp?: string, opaque?: string) {
+  async produce(topic: string, partition: number, message: string, key?: string, timestamp?: string, opaque?: string) {
     if (!this.ready) {
-      throw new Error('Connection Not Ready')
+      throw new Error('Kafka Connection Not Ready')
     }
     return new Promise((resolve, reject) => {
       try {
-        this.producer.produce(topic, partition, new Buffer(message), key, timestamp, opaque)
+        this.producer.produce(topic, partition, new Buffer(message), key, timestamp || Date.now(), opaque)
         resolve()
       } catch (err) {
         reject(err)
@@ -67,7 +63,8 @@ export class KafkaConsumer {
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
   }
 
-  connect(metadataOptions: any = {}) {
+  // rebalancing is managed internally by librdkafka by default
+  async connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
       this.consumer.connect(metadataOptions, (err, data) => {
         if (err) {
@@ -91,17 +88,17 @@ export class KafkaConsumer {
 
   flowing(cb: (err: Error, message: KafkaMessage) => void) {
     if (this.mode != null) {
-      throw Error(`Consumer has been set as ${this.mode} mode`)
+      throw Error(`Kafka Consumer has been set on ${this.mode} mode`)
     }
     this.mode = 'flowing'
     return this.consumer.consume(cb, null)
   }
 
-  fetch(): Promise<KafkaMessage> {
+  async fetch(): Promise<KafkaMessage> {
     if (this.mode != null) {
-      throw Error(`Consumer has been set as ${this.mode} mode`)
+      throw Error(`Kafka Consumer has been set on ${this.mode} mode`)
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<KafkaMessage>((resolve, reject) => {
       return this.consumer.consume(1, (err: Error, message: KafkaMessage) => {
         if (err) {
           reject(err)

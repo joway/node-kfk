@@ -16,18 +16,19 @@ npm i node-rdkafka-promise -S
 ### Kafka Producer
 
 ```js
-const producer = new KafkaProducer({
+const conf = {
   'client.id': 'kafka',
   'metadata.broker.list': 'localhost:9092',
   'compression.codec': 'gzip',
   'retry.backoff.ms': 200,
   'message.send.max.retries': 10,
   'socket.keepalive.enable': true,
-  'queue.buffering.max.messages': 100000,
-  'queue.buffering.max.ms': 1000,
+  'queue.buffering.max.messages': 1000,
+  'queue.buffering.max.ms': 100,
   'batch.num.messages': 1000000,
-  'dr_cb': true
-}, {})
+}
+const topicConf = {}
+const producer = new KafkaProducer(conf, topicConf)
 
 producer.connect()
   .then(() => {
@@ -44,12 +45,20 @@ producer.connect()
 ### Kafka Consumer
 
 ```js
-const consumer = new KafkaConsumer({
+const conf = {
   'group.id': 'kafka',
   'metadata.broker.list': 'localhost:9092',
-})
+  'enable.auto.commit': true, // recommend
+}
+const topicConf = {
+  'auto.offset.reset': 'smallest',
+}
+const consumer = new KafkaConsumer(conf)
 
 consumer.connect()
+  .then(() => {
+    consumer.subscribe(['librdtesting-01'])
+  })
   .then(async () => {
     // fetch mode : get one message
     const message = await consumer.fetch()
