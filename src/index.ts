@@ -1,4 +1,5 @@
 import * as Kafka from 'node-rdkafka'
+import { Dictionary } from 'lodash';
 
 export interface KafkaMessage {
   value: Buffer // message contents as a Buffer
@@ -48,18 +49,12 @@ export class KafkaProducer {
   }
 }
 
-export class KafkaConsumer {
-  private consumer: Kafka.KafkaConsumer
-  private ready: boolean
-  private mode: string | null
-
-  // used in flowing mode
-  private buffer: KafkaMessage[]
+export class KafkaBasicConsumer {
+  public consumer: Kafka.KafkaConsumer
+  protected ready: boolean
 
   constructor(conf: any, topicConf: any = {}) {
     this.ready = false
-    this.buffer = []
-    this.mode = null
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
   }
 
@@ -85,19 +80,15 @@ export class KafkaConsumer {
   unsubscribe() {
     return this.consumer.unsubscribe()
   }
+}
 
+export class KafkaSampleConsumer extends KafkaBasicConsumer {
   flowing(cb: (err: Error, message: KafkaMessage) => void) {
-    if (this.mode != null) {
-      throw Error(`Kafka Consumer has been set on ${this.mode} mode`)
-    }
-    this.mode = 'flowing'
     return this.consumer.consume(cb, null)
   }
 
+  // fetch one message
   async fetch(): Promise<KafkaMessage> {
-    if (this.mode != null) {
-      throw Error(`Kafka Consumer has been set on ${this.mode} mode`)
-    }
     return new Promise<KafkaMessage>((resolve, reject) => {
       return this.consumer.consume(1, (err: Error, message: KafkaMessage) => {
         if (err) {
@@ -109,7 +100,35 @@ export class KafkaConsumer {
   }
 }
 
+// Kafka `at least once` Consumer
+export class KafkaALOConsumer extends KafkaBasicConsumer {
+  // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
+  async consume(
+    size: number = 100,
+    cb: (err: Error, message: KafkaMessage) => void,
+  ): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      return this.consumer.consume(size, (err: Error, messages: KafkaMessage[]) => {
+        if (err) {
+          reject(err)
+        }
+        for (const message of messages) {
+          Promise.resolve(cb(err, message))
+            .then(() => {
+              this.consumer.commitMessage(message)
+            })
+            .catch(e => {
+              reject(e)
+            })
+        }
+        return resolve(true)
+      })
+    })
+  }
+}
+
 export default {
   KafkaProducer,
-  KafkaConsumer,
+  KafkaSampleConsumer,
+  KafkaALOConsumer,
 }
