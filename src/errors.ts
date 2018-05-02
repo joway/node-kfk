@@ -1,3 +1,7 @@
+import * as Kafka from 'node-rdkafka'
+
+export const KfkNativeErrorCode = Kafka.CODES.ERRORS
+
 export const KfkErrorCode = {
   UNDEFINED: -1,
 
