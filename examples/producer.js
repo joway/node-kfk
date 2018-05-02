@@ -23,6 +23,7 @@ const main = async () => {
 
   while (true) {
     const msg = `${new Date().getTime()}-${crypto.randomBytes(20).toString('hex')}`
+    console.log(msg)
 
     await producer.produce(_.sample([
       'rdkafka-test0',

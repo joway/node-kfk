@@ -1,18 +1,17 @@
 
 const crypto = require('crypto')
 const bluebird = require('bluebird')
-const KafkaALOConsumer = require('../dist/src').KafkaALOConsumer
+const KafkaAMOConsumer = require('../dist/src').KafkaAMOConsumer
 const KfkErrorCode = require('../dist/src').KfkErrorCode
 
 const main = async () => {
   console.log('start')
 
-  const consumer = new KafkaALOConsumer({
+  const consumer = new KafkaAMOConsumer({
     'group.id': 'alo-consumer-test-1',
     'metadata.broker.list': '127.0.0.1:9092',
-    'auto.offset.reset': 'largest',
     'enable.auto.offset.store': true,
-    'enable.auto.commit': false,
+    'enable.auto.commit': true,
   }, {})
   await consumer.connect()
   await consumer.subscribe([
@@ -23,12 +22,20 @@ const main = async () => {
 
   while (true) {
     console.log('=============')
-    await consumer.consume(message => {
-      console.log(`topic: ${message.topic} offset : ${message.offset} val: ${message.value.toString('utf-8')}`)
-    }, {
-        size: 10,
-        concurrency: 5,
+    try {
+      await consumer.consume(message => {
+        console.log(`topic: ${message.topic} offset : ${message.offset} val: ${message.value.toString('utf-8')}`)
+      }, {
+          size: 10,
+          concurrency: 5,
+        })
+    } catch (e) {
+      JSON.stringify({
+        message: e.message,
+        code: e.code,
       })
+      return
+    }
   }
   await bluebird.delay(1000 * 10)
 }
