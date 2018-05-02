@@ -63,6 +63,7 @@ export abstract class KafkaBasicConsumer {
         if (err) {
           reject(new DisconnectError(err.message))
         }
+        console.log('Consumer disconnect success')
         resolve(data)
       })
     })
@@ -89,6 +90,8 @@ export abstract class KafkaBasicConsumer {
           this.dead = true
           await this.graceulDead()
           await this.disconnect()
+
+          console.log('Consumer graceul death success')
           process.exit(0)
         }
         process.on('SIGINT', graceulDeath)
