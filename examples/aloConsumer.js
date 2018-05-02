@@ -11,7 +11,7 @@ const main = async () => {
     'group.id': 'alo-consumer-test-1',
     'metadata.broker.list': '127.0.0.1:9092',
     'auto.offset.reset': 'largest',
-    'enable.auto.offset.store': true,
+    'enable.auto.offset.store': false,
     'enable.auto.commit': false,
   }, {})
   await consumer.connect()
