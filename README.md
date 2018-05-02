@@ -1,9 +1,9 @@
-# Node Rdkafka Promise
+# Node-Kfk
 
 ![npm](https://img.shields.io/npm/v/kfk.svg)
 ![npm](https://img.shields.io/npm/dt/kfk.svg)
 
-The high-level node kafka client with Promise support .
+The high-level node kafka client based on node-rdkafka .
 
 ## Usage
 
