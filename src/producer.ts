@@ -34,6 +34,7 @@ export abstract class KafkaBasicProducer {
         if (err) {
           reject(new DisconnectError(err.message))
         }
+        console.log('Producer disconnect success')
         resolve(data)
       })
     })
@@ -68,6 +69,8 @@ export abstract class KafkaBasicProducer {
           this.dead = true
           await this.graceulDead()
           await this.disconnect()
+
+          console.log('Producer graceul death success')
           process.exit(0)
         }
         process.on('SIGINT', graceulDeath)

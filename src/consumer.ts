@@ -32,6 +32,26 @@ export abstract class KafkaBasicConsumer {
     this.ready = false
     this.dead = false
     this.topics = []
+
+    if (conf['rebalance_cb'] === undefined) {
+      conf['rebalance_cb'] = (err: any, assignment: any) => {
+        if (err.code === ErrorCode.ERR__ASSIGN_PARTITIONS) {
+          // Note: this can throw when you are disconnected. Take care and wrap it in
+          // a try catch if that matters to you
+          this.consumer.assign(assignment)
+          console.log(`Consumer rebalanced at : `)
+          for (const assign of assignment) {
+            console.log(`   topic ${assign.topic}, partition: ${assign.partition}`)
+          }
+        } else if (err.code == ErrorCode.ERR__REVOKE_PARTITIONS) {
+          // Same as above
+          this.consumer.unassign()
+        } else {
+          // We had a real error
+          console.error(err)
+        }
+      }
+    }
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
   }
 
@@ -43,6 +63,7 @@ export abstract class KafkaBasicConsumer {
         if (err) {
           reject(new DisconnectError(err.message))
         }
+        console.log('Consumer disconnect success')
         resolve(data)
       })
     })
@@ -69,6 +90,8 @@ export abstract class KafkaBasicConsumer {
           this.dead = true
           await this.graceulDead()
           await this.disconnect()
+
+          console.log('Consumer graceul death success')
           process.exit(0)
         }
         process.on('SIGINT', graceulDeath)
