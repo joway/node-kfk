@@ -1,7 +1,7 @@
 # Node-Kfk
 
-![npm](https://img.shields.io/npm/v/kfk.svg)
-![npm](https://img.shields.io/npm/dt/kfk.svg)
+[![npm](https://img.shields.io/npm/v/kfk.svg)](https://www.npmjs.com/package/kfk)
+[![npm](https://img.shields.io/npm/dt/kfk.svg)](https://www.npmjs.com/package/kfk)
 
 The high-level node kafka client based on node-rdkafka .
 
