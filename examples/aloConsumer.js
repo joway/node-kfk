@@ -11,7 +11,7 @@ const main = async () => {
     'group.id': 'alo-consumer-test-1',
     'metadata.broker.list': '127.0.0.1:9092',
     'auto.offset.reset': 'largest',
-    'enable.auto.offset.store': true,
+    'enable.auto.offset.store': false,
     'enable.auto.commit': false,
   }, {})
   await consumer.connect()
@@ -22,6 +22,7 @@ const main = async () => {
   ])
 
   while (true) {
+    console.log('=============')
     await consumer.consume(message => {
       console.log(`topic: ${message.topic} offset : ${message.offset} val: ${message.value.toString('utf-8')}`)
     }, {
@@ -29,6 +30,7 @@ const main = async () => {
         concurrency: 5,
       })
   }
+  await bluebird.delay(1000 * 10)
 }
 
 main()

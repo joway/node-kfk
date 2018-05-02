@@ -9,8 +9,6 @@ import {
   DisconnectError,
   ConnectionNotReadyError,
   ConnectionDeadError,
-  ProducerFlushError,
-  ProducerRuntimeError,
   ConsumerRuntimeError,
   MetadataError,
   SeekError,
@@ -52,6 +50,10 @@ export abstract class KafkaBasicConsumer {
 
   // rebalancing is managed internally by librdkafka by default
   async connect(metadataOptions: any = {}) {
+    if (this.connected) {
+      throw new ConnectedError('Has been connected')
+    }
+
     return new Promise((resolve, reject) => {
       this.consumer.connect(metadataOptions, (err, data) => {
         if (err) {
@@ -182,6 +184,10 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
       options.concurrency = options.size
     }
 
+    if (!this.connected) {
+      throw new ConnectionNotReadyError('Connection not ready')
+    }
+
     let success = true
 
     return new Promise<boolean>((resolve, reject) => {
@@ -193,38 +199,104 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         if (err) {
           reject(new ConsumerRuntimeError(err.message))
         }
-        await bluebird.map(messages, async message => {
-          // stop the topicPartition progress then has error throw
-          if (this.errOffsetStore[message.topic][message.partition] >= 0) {
-            return
-          }
-          try {
-            await Promise.resolve(cb(message))
+        try {
+          await bluebird.map(messages, async message => {
             // stop the topicPartition progress then has error throw
             if (this.errOffsetStore[message.topic][message.partition] >= 0) {
               return
             }
-            // update success offset to max one
-            this.offsetStore[message.topic][message.partition] = Math.max(
-              this.offsetStore[message.topic][message.partition],
-              message.offset,
-            )
-          } catch (e) {
-            success = false
-            // fallback to last message
-            if (this.errOffsetStore[message.topic][message.partition] < 0) {
-              this.errOffsetStore[message.topic][message.partition] = message.offset
-            } else {
-              // fallback to the smallest offset
-              this.errOffsetStore[message.topic][message.partition] = Math.min(
-                this.errOffsetStore[message.topic][message.partition],
+            try {
+              await Promise.resolve(cb(message))
+              // stop the topicPartition progress then has error throw
+              if (this.errOffsetStore[message.topic][message.partition] >= 0) {
+                return
+              }
+              // update success offset to max one
+              this.offsetStore[message.topic][message.partition] = Math.max(
+                this.offsetStore[message.topic][message.partition],
                 message.offset,
               )
+            } catch (e) {
+              success = false
+              // fallback to last message
+              if (this.errOffsetStore[message.topic][message.partition] < 0) {
+                this.errOffsetStore[message.topic][message.partition] = message.offset
+              } else {
+                // fallback to the smallest offset
+                this.errOffsetStore[message.topic][message.partition] = Math.min(
+                  this.errOffsetStore[message.topic][message.partition],
+                  message.offset,
+                )
+              }
             }
-          }
-        }, { concurrency: options.concurrency })
+          }, { concurrency: options.concurrency })
 
-        await this.commits()
+          await this.commits()
+        } catch (e) {
+          reject(new ConsumerRuntimeError(err.message))
+        }
+
+        return resolve(success)
+      })
+    })
+  }
+}
+
+// `At Most Once` Consumer
+export class KafkaAMOConsumer extends KafkaBasicConsumer {
+  constructor(conf: any, topicConf: any = {}) {
+    conf['enable.auto.commit'] = true
+    super(conf, topicConf)
+  }
+
+  async graceulDead(): Promise<boolean> {
+    return true
+  }
+
+  async subscribe(topics: string[]) {
+    this.topics = _.uniq(_.concat(topics, this.topics))
+    // synchronously
+    this.consumer.subscribe(this.topics)
+  }
+
+  async consume(
+    cb: (message: KafkaMessage) => any,
+    options: { size: number, concurrency: number, } = { size: 100, concurrency: 100 },
+  ): Promise<boolean> {
+    // default option value
+    if (!options.size) {
+      options.size = 100
+    }
+    if (!options.concurrency) {
+      options.concurrency = options.size
+    }
+
+    if (!this.connected) {
+      throw new ConnectionNotReadyError('Connection not ready')
+    }
+
+    let success = true
+
+    return new Promise<boolean>((resolve, reject) => {
+      // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
+      return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
+        if (this.dead) {
+          reject(new ConnectionDeadError('Connection has been dead or is dying'))
+        }
+        if (err) {
+          reject(new ConsumerRuntimeError(err.message))
+        }
+        try {
+          await bluebird.map(messages, async message => {
+            try {
+              await Promise.resolve(cb(message))
+            } catch (e) {
+              success = false
+            }
+          }, { concurrency: options.concurrency })
+        } catch (e) {
+          reject(new ConsumerRuntimeError(err.message))
+        }
         return resolve(success)
       })
     })
