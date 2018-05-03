@@ -1,7 +1,7 @@
 {
   "name": "kfk",
-  "version": "0.0.5",
-  "description": "The high-level node kafka client with Async/Promise support .",
+  "version": "0.0.7",
+  "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "license": "MIT License",
@@ -9,6 +9,13 @@
     "type": "git",
     "url": "https://github.com/joway/node-kfk.git"
   },
+  "keywords": [
+    "nodejs",
+    "kafka",
+    "librdkafka",
+    "node-rdkafka",
+    "high-level"
+  ],
   "scripts": {
     "compile": "tsc",
     "clean": "rm -rf dist",
