@@ -30,12 +30,6 @@ export class ConnectingError extends KfkError {
     this.code = KfkErrorCode.CONNECTING
   }
 }
-export class ConnectedError extends KfkError {
-  constructor(message: string) {
-    super(message)
-    this.code = KfkErrorCode.CONNECTED
-  }
-}
 export class DisconnectError extends KfkError {
   constructor(message: string) {
     super(message)

@@ -4,7 +4,6 @@ import * as bluebird from 'bluebird'
 
 import {
   ConnectingError,
-  ConnectedError,
   DisconnectError,
   ConnectionNotReadyError,
   ConnectionDeadError,
@@ -17,16 +16,18 @@ const FLUSH_TIMEOUT = 1000 // ms
 
 export abstract class KafkaBasicProducer {
   public client: Kafka.Producer
-  protected connected: boolean
   protected dead: boolean
+  protected flushing: boolean
 
   constructor(conf: any, topicConf: any = {}) {
-    this.connected = false
     this.dead = false
+    this.flushing = false
     this.client = new Kafka.Producer(conf, topicConf)
+
+    this.setGraceulDeath()
   }
 
-  abstract async graceulDead(): Promise<boolean>
+ abstract async graceulDead(): Promise<boolean>
 
   disconnect() {
     return new Promise((resolve, reject) => {
@@ -40,9 +41,14 @@ export abstract class KafkaBasicProducer {
     })
   }
 
-  flush(timeout: number) {
+  async flush(timeout: number) {
+    if (this.flushing) {
+      return
+    }
+    this.flushing = true
     return new Promise((resolve, reject) => {
       return this.client.flush(timeout, (err: Error) => {
+        this.flushing = false
         if (err) {
           reject(new ProducerFlushError(err.message))
         }
@@ -53,33 +59,29 @@ export abstract class KafkaBasicProducer {
 
   connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
-      if (this.connected) {
-        reject(new ConnectedError('Has been connected'))
-      }
       this.client.connect(metadataOptions, (err, data) => {
         if (err) {
           reject(new ConnectingError(err.message))
         }
-      })
-      this.client.on('ready', () => {
-        this.connected = true
-
-        const graceulDeath = async () => {
-          console.log('disconnect from kafka')
-          this.dead = true
-          await this.graceulDead()
-          await this.disconnect()
-
-          console.log('Producer graceul death success')
-          process.exit(0)
-        }
-        process.on('SIGINT', graceulDeath)
-        process.on('SIGQUIT', graceulDeath)
-        process.on('SIGTERM', graceulDeath)
-
-        resolve()
+        resolve(data)
       })
     })
+  }
+
+  private setGraceulDeath() {
+    const _graceulDeath = async () => {
+      console.log('Producer graceul death begin')
+
+      this.dead = true
+      await this.graceulDead()
+      await this.disconnect()
+
+      console.log('Producer graceul death success')
+      process.exit(0)
+    }
+    process.on('SIGINT', _graceulDeath)
+    process.on('SIGQUIT', _graceulDeath)
+    process.on('SIGTERM', _graceulDeath)
   }
 }
 
@@ -91,9 +93,6 @@ export class KafkaProducer extends KafkaBasicProducer {
 
   async produce(topic: string, partition: number, message: string, key?: string, timestamp?: string, opaque?: string) {
     return new Promise((resolve, reject) => {
-      if (!this.connected) {
-        reject(new ConnectionNotReadyError('Connection not ready'))
-      }
       if (this.dead) {
         reject(new ConnectionDeadError('Connection has been dead or is dying'))
       }
