@@ -8,16 +8,18 @@ const main = async () => {
   console.log('start')
 
   const consumer = new KafkaAMOConsumer({
-    'group.id': 'alo-consumer-test-1',
+    'group.id': 'amo-consumer-test-1',
     'metadata.broker.list': '127.0.0.1:9092',
+    'auto.offset.reset': 'largest',
     'enable.auto.offset.store': true,
+    'auto.commit.interval.ms': 500,
     'enable.auto.commit': true,
   }, {})
   await consumer.connect()
   await consumer.subscribe([
     'rdkafka-test0',
-    'rdkafka-test1',
-    'rdkafka-test2',
+    // 'rdkafka-test1',
+    // 'rdkafka-test2',
   ])
 
   while (true) {
@@ -36,8 +38,8 @@ const main = async () => {
       })
       return
     }
+    await bluebird.delay(1000 * 1)
   }
-  await bluebird.delay(1000 * 10)
 }
 
 main()

@@ -5,7 +5,6 @@ import * as bluebird from 'bluebird'
 import { TopicPartition, KafkaMetadata, KafkaMessage, KafkaMessageError } from './types'
 import {
   ConnectingError,
-  ConnectedError,
   DisconnectError,
   ConnectionNotReadyError,
   ConnectionDeadError,
@@ -17,10 +16,16 @@ import {
 const SEEK_TIMEOUT = 1000
 const ErrorCode = Kafka.CODES.ERRORS
 
+const _ifNotExistedAndSet = (conf: any, key: string, value: any) => {
+  if (conf[key] === undefined) {
+    conf[key] = value
+    return true
+  }
+  return false
+}
+
 export abstract class KafkaBasicConsumer {
   public consumer: Kafka.KafkaConsumer
-  protected connected: boolean
-  protected ready: boolean
   protected dead: boolean
   protected topics: string[]
 
@@ -28,31 +33,30 @@ export abstract class KafkaBasicConsumer {
   protected errOffsetStore: { [key: string]: { [key: number]: number } } = {}
 
   constructor(conf: any, topicConf: any = {}) {
-    this.connected = false
-    this.ready = false
     this.dead = false
     this.topics = []
 
-    if (conf['rebalance_cb'] === undefined) {
-      conf['rebalance_cb'] = (err: any, assignment: any) => {
-        if (err.code === ErrorCode.ERR__ASSIGN_PARTITIONS) {
-          // Note: this can throw when you are disconnected. Take care and wrap it in
-          // a try catch if that matters to you
-          this.consumer.assign(assignment)
-          console.log(`Consumer rebalanced at : `)
-          for (const assign of assignment) {
-            console.log(`   topic ${assign.topic}, partition: ${assign.partition}`)
-          }
-        } else if (err.code == ErrorCode.ERR__REVOKE_PARTITIONS) {
-          // Same as above
-          this.consumer.unassign()
-        } else {
-          // We had a real error
-          console.error(err)
+    _ifNotExistedAndSet(conf, 'rebalance_cb', (err: any, assignment: any) => {
+      if (err.code === ErrorCode.ERR__ASSIGN_PARTITIONS) {
+        // Note: this can throw when you are disconnected. Take care and wrap it in
+        // a try catch if that matters to you
+        this.consumer.assign(assignment)
+        console.log(`Consumer rebalanced at : `)
+        for (const assign of assignment) {
+          console.log(`   topic ${assign.topic}, partition: ${assign.partition}`)
         }
+      } else if (err.code == ErrorCode.ERR__REVOKE_PARTITIONS) {
+        // Same as above
+        this.consumer.unassign()
+      } else {
+        // We had a real error
+        console.error(err)
       }
-    }
+    })
+
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
+
+    this.setGraceulDeath()
   }
 
   abstract async graceulDead(): Promise<boolean>
@@ -71,36 +75,31 @@ export abstract class KafkaBasicConsumer {
 
   // rebalancing is managed internally by librdkafka by default
   async connect(metadataOptions: any = {}) {
-    if (this.connected) {
-      throw new ConnectedError('Has been connected')
-    }
-
     return new Promise((resolve, reject) => {
       this.consumer.connect(metadataOptions, (err, data) => {
         if (err) {
           reject(new ConnectingError(err.message))
         }
-      })
 
-      // listen connected event
-      return this.consumer.on('ready', async () => {
-        this.connected = true
-
-        const graceulDeath = async () => {
-          this.dead = true
-          await this.graceulDead()
-          await this.disconnect()
-
-          console.log('Consumer graceul death success')
-          process.exit(0)
-        }
-        process.on('SIGINT', graceulDeath)
-        process.on('SIGQUIT', graceulDeath)
-        process.on('SIGTERM', graceulDeath)
-
-        resolve()
+        resolve(data)
       })
     })
+  }
+
+  private setGraceulDeath() {
+    const _graceulDeath = async () => {
+      console.log('Consumer graceul death begin')
+
+      this.dead = true
+      await this.graceulDead()
+      await this.disconnect()
+
+      console.log('Consumer graceul death success')
+      process.exit(0)
+    }
+    process.on('SIGINT', _graceulDeath)
+    process.on('SIGQUIT', _graceulDeath)
+    process.on('SIGTERM', _graceulDeath)
   }
 
   async subscribe(topics: string[]) {
@@ -139,7 +138,6 @@ export abstract class KafkaBasicConsumer {
   }
 
   async initOffsetStroe() {
-    this.ready = true
     const meta = await this.getMetadata({ timeout: 1000 })
     for (const topic of meta.topics) {
       if (this.topics.includes(topic.name)) {
@@ -190,6 +188,13 @@ export abstract class KafkaBasicConsumer {
 // You must guarantee that your consumer cb function will not throw any Error.
 // Otherwise, it will to been blocked on the offset where throw Error
 export class KafkaALOConsumer extends KafkaBasicConsumer {
+  constructor(conf: any, topicConf: any = {}) {
+    _ifNotExistedAndSet(conf, 'enable.auto.commit', false)
+    _ifNotExistedAndSet(conf, 'enable.auto.offset.store', false)
+
+    super(conf, topicConf)
+  }
+
   async graceulDead(): Promise<boolean> {
     await this.commits()
     return true
@@ -206,11 +211,6 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     if (!options.concurrency) {
       options.concurrency = options.size
     }
-
-    if (!this.connected) {
-      throw new ConnectionNotReadyError('Connection not ready')
-    }
-
     let success = true
 
     return new Promise<boolean>((resolve, reject) => {
@@ -256,7 +256,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
           await this.commits()
         } catch (e) {
-          reject(new ConsumerRuntimeError(err.message))
+          reject(new ConsumerRuntimeError(e.message))
         }
 
         return resolve(success)
@@ -268,7 +268,10 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 // `At Most Once` Consumer
 export class KafkaAMOConsumer extends KafkaBasicConsumer {
   constructor(conf: any, topicConf: any = {}) {
-    conf['enable.auto.commit'] = true
+    _ifNotExistedAndSet(conf, 'enable.auto.commit', true)
+    _ifNotExistedAndSet(conf, 'enable.auto.offset.store', true)
+    _ifNotExistedAndSet(conf, 'auto.commit.interval.ms', 500)
+
     super(conf, topicConf)
   }
 
@@ -293,11 +296,6 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
     if (!options.concurrency) {
       options.concurrency = options.size
     }
-
-    if (!this.connected) {
-      throw new ConnectionNotReadyError('Connection not ready')
-    }
-
     let success = true
 
     return new Promise<boolean>((resolve, reject) => {

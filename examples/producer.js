@@ -27,8 +27,8 @@ const main = async () => {
 
     await producer.produce(_.sample([
       'rdkafka-test0',
-      'rdkafka-test1',
-      'rdkafka-test2',
+      // 'rdkafka-test1',
+      // 'rdkafka-test2',
     ]), null, msg)
 
     await bluebird.delay(1)

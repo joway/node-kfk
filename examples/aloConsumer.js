@@ -17,8 +17,8 @@ const main = async () => {
   await consumer.connect()
   await consumer.subscribe([
     'rdkafka-test0',
-    'rdkafka-test1',
-    'rdkafka-test2',
+    // 'rdkafka-test1',
+    // 'rdkafka-test2',
   ])
 
   while (true) {
