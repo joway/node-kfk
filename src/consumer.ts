@@ -56,10 +56,10 @@ export abstract class KafkaBasicConsumer {
 
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
 
-    this.setGraceulDeath()
+    this.setGracefulDeath()
   }
 
-  abstract async graceulDead(): Promise<boolean>
+  abstract async gracefulDead(): Promise<boolean>
 
   disconnect() {
     return new Promise((resolve, reject) => {
@@ -86,20 +86,20 @@ export abstract class KafkaBasicConsumer {
     })
   }
 
-  private setGraceulDeath() {
-    const _graceulDeath = async () => {
-      console.log('Consumer graceul death begin')
+  private setGracefulDeath() {
+    const _gracefulDeath = async () => {
+      console.log('Consumer graceful death begin')
 
       this.dead = true
-      await this.graceulDead()
+      await this.gracefulDead()
       await this.disconnect()
 
-      console.log('Consumer graceul death success')
+      console.log('Consumer graceful death success')
       process.exit(0)
     }
-    process.on('SIGINT', _graceulDeath)
-    process.on('SIGQUIT', _graceulDeath)
-    process.on('SIGTERM', _graceulDeath)
+    process.on('SIGINT', _gracefulDeath)
+    process.on('SIGQUIT', _gracefulDeath)
+    process.on('SIGTERM', _gracefulDeath)
   }
 
   async subscribe(topics: string[]) {
@@ -107,7 +107,7 @@ export abstract class KafkaBasicConsumer {
     // synchronously
     this.consumer.subscribe(this.topics)
     // refresh offset
-    await this.initOffsetStroe()
+    await this.initOffsetStore()
   }
 
   unsubscribe() {
@@ -137,7 +137,7 @@ export abstract class KafkaBasicConsumer {
     })
   }
 
-  async initOffsetStroe() {
+  async initOffsetStore() {
     const meta = await this.getMetadata({ timeout: 1000 })
     for (const topic of meta.topics) {
       if (this.topics.includes(topic.name)) {
@@ -195,7 +195,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     super(conf, topicConf)
   }
 
-  async graceulDead(): Promise<boolean> {
+  async gracefulDead(): Promise<boolean> {
     await this.commits()
     return true
   }
@@ -275,7 +275,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
     super(conf, topicConf)
   }
 
-  async graceulDead(): Promise<boolean> {
+  async gracefulDead(): Promise<boolean> {
     return true
   }
 

@@ -24,10 +24,10 @@ export abstract class KafkaBasicProducer {
     this.flushing = false
     this.client = new Kafka.Producer(conf, topicConf)
 
-    this.setGraceulDeath()
+    this.setGracefulDeath()
   }
 
- abstract async graceulDead(): Promise<boolean>
+ abstract async gracefulDead(): Promise<boolean>
 
   disconnect() {
     return new Promise((resolve, reject) => {
@@ -68,25 +68,25 @@ export abstract class KafkaBasicProducer {
     })
   }
 
-  private setGraceulDeath() {
-    const _graceulDeath = async () => {
-      console.log('Producer graceul death begin')
+  private setGracefulDeath() {
+    const _gracefulDeath = async () => {
+      console.log('Producer graceful death begin')
 
       this.dead = true
-      await this.graceulDead()
+      await this.gracefulDead()
       await this.disconnect()
 
-      console.log('Producer graceul death success')
+      console.log('Producer graceful death success')
       process.exit(0)
     }
-    process.on('SIGINT', _graceulDeath)
-    process.on('SIGQUIT', _graceulDeath)
-    process.on('SIGTERM', _graceulDeath)
+    process.on('SIGINT', _gracefulDeath)
+    process.on('SIGQUIT', _gracefulDeath)
+    process.on('SIGTERM', _gracefulDeath)
   }
 }
 
 export class KafkaProducer extends KafkaBasicProducer {
-  async graceulDead() {
+  async gracefulDead() {
     await this.flush(FLUSH_TIMEOUT)
     return true
   }
