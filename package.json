@@ -1,6 +1,6 @@
 {
   "name": "kfk",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -22,7 +22,7 @@
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
     "lint": "tslint --project .",
-    "test": "npm run lint && npm run compile && NODE_ENV=ci ava dist/tests",
+    "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests",
     "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
     "pub": "npm run build && npm publish"
   },
@@ -31,11 +31,11 @@
   ],
   "author": "joway",
   "dependencies": {
-    "@types/bluebird": "^3.5.20",
-    "@types/lodash": "^4.14.106",
-    "bluebird": "^3.5.1",
+    "@types/bluebird": "3.5.20",
+    "@types/lodash": "4.14.106",
+    "bluebird": "3.5.1",
     "lodash": "4.17.5",
-    "node-rdkafka": "^2.3.1"
+    "node-rdkafka": "2.3.4"
   },
   "devDependencies": {
     "@types/node": "8.0.46",
@@ -49,6 +49,6 @@
     "supertest": "3.0.0",
     "tslint": "5.9.1",
     "tslint-jike-node": "0.0.14",
-    "typescript": "2.7.2"
+    "typescript": "2.9.2"
   }
 }

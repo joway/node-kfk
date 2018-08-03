@@ -1,33 +1,30 @@
-import * as _ from 'lodash'
 import * as Kafka from 'node-rdkafka'
-import * as bluebird from 'bluebird'
 
 import {
   ConnectingError,
   DisconnectError,
-  ConnectionNotReadyError,
   ConnectionDeadError,
   ProducerFlushError,
   ProducerRuntimeError,
 } from './errors'
 
 const ErrorCode = Kafka.CODES.ERRORS
-const FLUSH_TIMEOUT = 1000 // ms
+const FLUSH_TIMEOUT = 10000 // ms
 
 export abstract class KafkaBasicProducer {
   public client: Kafka.Producer
-  protected dead: boolean
+  protected dying: boolean
   protected flushing: boolean
 
   constructor(conf: any, topicConf: any = {}) {
-    this.dead = false
+    this.dying = false
     this.flushing = false
     this.client = new Kafka.Producer(conf, topicConf)
 
     this.setGracefulDeath()
   }
 
- abstract async gracefulDead(): Promise<boolean>
+  abstract async gracefulDead(): Promise<boolean>
 
   disconnect() {
     return new Promise((resolve, reject) => {
@@ -35,13 +32,13 @@ export abstract class KafkaBasicProducer {
         if (err) {
           reject(new DisconnectError(err.message))
         }
-        console.log('Producer disconnect success')
+        console.log('producer disconnect')
         resolve(data)
       })
     })
   }
 
-  async flush(timeout: number) {
+  async flush(timeout: number = FLUSH_TIMEOUT) {
     if (this.flushing) {
       return
     }
@@ -70,13 +67,12 @@ export abstract class KafkaBasicProducer {
 
   private setGracefulDeath() {
     const _gracefulDeath = async () => {
-      console.log('Producer graceful death begin')
-
-      this.dead = true
+      this.dying = true
+      // cleanup
       await this.gracefulDead()
       await this.disconnect()
 
-      console.log('Producer graceful death success')
+      console.log('producer graceful died')
       process.exit(0)
     }
     process.on('SIGINT', _gracefulDeath)
@@ -91,14 +87,14 @@ export class KafkaProducer extends KafkaBasicProducer {
     return true
   }
 
-  async produce(topic: string, partition: number, message: string, key?: string, timestamp?: string, opaque?: string) {
+  async produce(topic: string, partition: number | null, message: string, key?: string, timestamp?: string, opaque?: string) {
     return new Promise((resolve, reject) => {
-      if (this.dead) {
+      if (this.dying) {
         reject(new ConnectionDeadError('Connection has been dead or is dying'))
       }
       try {
         // synchronously
-        this.client.produce(topic, partition, new Buffer(message), key, timestamp || Date.now(), opaque)
+        this.client.produce(topic, partition, Buffer.from(message), key, timestamp || Date.now(), opaque)
         resolve()
       } catch (err) {
         if (err.code === ErrorCode.ERR__QUEUE_FULL) {
