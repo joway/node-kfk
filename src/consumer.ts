@@ -266,12 +266,6 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
     return true
   }
 
-  async subscribe(topics: string[]) {
-    this.topics = _.uniq(_.concat(topics, this.topics))
-    // synchronously
-    this.consumer.subscribe(this.topics)
-  }
-
   async consume(
     cb: (message: KafkaMessage) => any,
     options: { size?: number; concurrency?: number } = {},
@@ -280,7 +274,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
     setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
     setIfNotExist(options, 'concurrency', options.size)
 
-    return new Promise<boolean | KafkaMessage[]>((resolve, reject) => {
+    return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
       return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
@@ -290,18 +284,15 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
           reject(new ConsumerRuntimeError(err.message))
         }
 
-        try {
-          await bluebird.map(
-            messages,
-            async (message) => {
-              await Promise.resolve(cb(message))
-            },
-            { concurrency: options.concurrency || DEFAULT_CONCURRENT },
-          )
-        } catch (e) {
-          reject(new ConsumerRuntimeError(err.message))
-        }
-        resolve(messages)
+        return bluebird.map(
+          messages,
+          (message) => {
+            return Promise.resolve(cb(message))
+          },
+          { concurrency: options.concurrency || DEFAULT_CONCURRENT },
+        )
+          .then(messages => (resolve(messages)))
+          .catch(err => (reject(new ConsumerRuntimeError(err.message))))
       })
     })
   }
