@@ -7,17 +7,13 @@ import { KafkaALOConsumer, KafkaAMOConsumer } from './consumer'
 import { KfkErrorCode } from './errors'
 import { TopicPartition, KafkaMetadata, KafkaMessage, KafkaMessageError } from './types'
 
-
 export {
   TopicPartition,
   KafkaMetadata,
   KafkaMessage,
   KafkaMessageError,
-
   KafkaProducer,
-
   KafkaALOConsumer,
   KafkaAMOConsumer,
-
   KfkErrorCode,
 }

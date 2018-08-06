@@ -56,12 +56,15 @@ export abstract class KafkaBasicProducer {
 
   connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
-      this.client.connect(metadataOptions, (err, data) => {
-        if (err) {
-          reject(new ConnectingError(err.message))
-        }
-        resolve(data)
-      })
+      this.client.connect(
+        metadataOptions,
+        (err, data) => {
+          if (err) {
+            reject(new ConnectingError(err.message))
+          }
+          resolve(data)
+        },
+      )
     })
   }
 
@@ -87,22 +90,35 @@ export class KafkaProducer extends KafkaBasicProducer {
     return true
   }
 
-  async produce(topic: string, partition: number | null, message: string, key?: string, timestamp?: string, opaque?: string) {
+  async produce(
+    topic: string,
+    partition: number | null,
+    message: string,
+    key?: string,
+    timestamp?: string,
+    opaque?: string,
+  ) {
     return new Promise((resolve, reject) => {
       if (this.dying) {
         reject(new ConnectionDeadError('Connection has been dead or is dying'))
       }
       try {
         // synchronously
-        this.client.produce(topic, partition, Buffer.from(message), key, timestamp || Date.now(), opaque)
+        this.client.produce(
+          topic,
+          partition,
+          Buffer.from(message),
+          key,
+          timestamp || Date.now(),
+          opaque,
+        )
         resolve()
       } catch (err) {
         if (err.code === ErrorCode.ERR__QUEUE_FULL) {
           // flush all queued messages
-          return this.flush(FLUSH_TIMEOUT)
-            .then(() => {
-              resolve()
-            })
+          return this.flush(FLUSH_TIMEOUT).then(() => {
+            resolve()
+          })
         }
         reject(new ProducerRuntimeError(err.message))
       }

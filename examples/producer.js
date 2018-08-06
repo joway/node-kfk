@@ -19,7 +19,7 @@ const main = async () => {
 
   await producer.connect()
 
-  console.log('connected')
+  console.log('producer connected')
 
   while (true) {
     const topic = _.sample([

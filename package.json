@@ -1,6 +1,6 @@
 {
   "name": "kfk",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -22,7 +22,7 @@
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
     "lint": "tslint --project .",
-    "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests",
+    "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests -v",
     "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
     "pub": "npm run build && npm publish"
   },
@@ -38,7 +38,7 @@
     "node-rdkafka": "2.3.4"
   },
   "devDependencies": {
-    "@types/node": "8.0.46",
+    "@types/node": "^10.5.6",
     "@types/sinon": "2.3.6",
     "@types/supertest": "2.0.3",
     "ava": "0.24.0",

@@ -14,18 +14,18 @@ export interface KafkaMessageError {
 }
 
 export interface TopicPartition {
-  topic: string,
-  partition: number,
-  offset: number,
+  topic: string
+  partition: number
+  offset: number
 }
 
 export interface KafkaMetadata {
   topics: {
-    name: string,
+    name: string
     partitions: {
-      id: number,
-      leader: number,
-      replicas: number[],
+      id: number
+      leader: number
+      replicas: number[]
       isrs: number[]
     }[]
   }[]

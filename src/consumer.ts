@@ -76,13 +76,16 @@ export abstract class KafkaBasicConsumer {
 
   async connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
-      this.consumer.connect(metadataOptions, (err: Error, data: any) => {
-        if (err) {
-          reject(new ConnectingError(err.message))
-        }
+      this.consumer.connect(
+        metadataOptions,
+        (err: Error, data: any) => {
+          if (err) {
+            reject(new ConnectingError(err.message))
+          }
 
-        resolve(data)
-      })
+          resolve(data)
+        },
+      )
     })
   }
 
@@ -153,10 +156,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
       this.offsetStore[topic] = {}
     }
 
-    this.offsetStore[topic][partition] = Math.max(
-      this.offsetStore[topic][partition] || 0,
-      offset,
-    )
+    this.offsetStore[topic][partition] = Math.max(this.offsetStore[topic][partition] || 0, offset)
   }
 
   private getOffset(topic: string, partition: number | string) {
@@ -212,7 +212,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
   async consume(
     cb: (message: KafkaMessage) => any,
-    options: { size?: number, concurrency?: number, } = {},
+    options: { size?: number; concurrency?: number } = {},
   ): Promise<boolean | KafkaMessage[]> {
     // default option value
     _setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
@@ -229,25 +229,26 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         }
 
         try {
-          await bluebird.map(messages, async message => {
-            try {
-              await Promise.resolve(cb(message))
-              this.setOffset(message.topic, message.partition, message.offset)
-            } catch (err) {
-              this.setErrOffset(message.topic, message.partition, message.offset)
-              throw err
-            }
-          }, { concurrency: options.concurrency || DEFAULT_CONCURRENT })
+          await bluebird.map(
+            messages,
+            async message => {
+              try {
+                await Promise.resolve(cb(message))
+                this.setOffset(message.topic, message.partition, message.offset)
+              } catch (err) {
+                this.setErrOffset(message.topic, message.partition, message.offset)
+                throw err
+              }
+            },
+            { concurrency: options.concurrency || DEFAULT_CONCURRENT },
+          )
         } catch (e) {
-          console.log(e)
           await this.commits()
-          return reject(new ConsumerRuntimeError(e.message))
+          reject(new ConsumerRuntimeError(e.message))
         }
 
-        console.log('commit start')
         await this.commits()
-        console.log('finish')
-        return resolve(messages)
+        resolve(messages)
       })
     })
   }
@@ -274,7 +275,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
 
   async consume(
     cb: (message: KafkaMessage) => any,
-    options: { size?: number, concurrency?: number, } = {},
+    options: { size?: number; concurrency?: number } = {},
   ): Promise<boolean | KafkaMessage[]> {
     // default option value
     _setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
@@ -293,13 +294,17 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
         }
 
         try {
-          await bluebird.map(messages, async message => {
-            try {
-              await Promise.resolve(cb(message))
-            } catch (e) {
-              success = false
-            }
-          }, { concurrency: options.concurrency || DEFAULT_CONCURRENT })
+          await bluebird.map(
+            messages,
+            async message => {
+              try {
+                await Promise.resolve(cb(message))
+              } catch (e) {
+                success = false
+              }
+            },
+            { concurrency: options.concurrency || DEFAULT_CONCURRENT },
+          )
         } catch (e) {
           reject(new ConsumerRuntimeError(err.message))
         }
