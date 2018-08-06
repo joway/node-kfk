@@ -31,9 +31,12 @@ export abstract class KafkaBasicConsumer {
   public consumer: Kafka.KafkaConsumer
   protected dying: boolean
   protected topics: string[]
-  // store the largest offset that has been success consumed in each topic-partition
+  /**
+   * the offsets to commit :
+   * - <= 0 : error offset to seek fallback
+   * - > 0 : success offset to commit
+   */
   protected offsetStore: Store = {}
-  protected errOffsetStore: Store = {}
 
   constructor(conf: any, topicConf: any = {}) {
     this.dying = false
@@ -136,34 +139,12 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     super(conf, topicConf)
   }
 
-  private setErrOffset(topic: string, partition: number, offset: number) {
-    if (!this.errOffsetStore[topic]) {
-      this.errOffsetStore[topic] = {}
-    }
-    if (this.errOffsetStore[topic][partition] === undefined) {
-      this.errOffsetStore[topic][partition] = offset
-    } else {
-      this.errOffsetStore[topic][partition] = Math.min(
-        this.errOffsetStore[topic][partition],
-        offset,
-      )
-    }
-  }
-
   private setOffset(topic: string, partition: number, offset: number) {
     if (!this.offsetStore[topic]) {
       this.offsetStore[topic] = {}
     }
-
-    this.offsetStore[topic][partition] = Math.max(this.offsetStore[topic][partition] || 0, offset)
-  }
-
-  private getOffset(topic: string, partition: number | string) {
-    return this.offsetStore[topic] ? this.offsetStore[topic][partition] : undefined
-  }
-
-  private getErrOffset(topic: string, partition: number | string) {
-    return this.errOffsetStore[topic] ? this.errOffsetStore[topic][partition] : undefined
+    const curOffset = this.offsetStore[topic][partition] || 0
+    this.offsetStore[topic][partition] = Math.max(curOffset, offset)
   }
 
   async gracefulDead(): Promise<boolean> {
@@ -183,28 +164,26 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
   }
 
   async commits() {
-    const topics = _.keys(this.offsetStore)
+    const offsetStore = this.offsetStore
+    const topics = _.keys(offsetStore)
     for (const topic of topics) {
       const partitions = _.keys(this.offsetStore[topic])
       for (const partition of partitions) {
-        if (this.offsetStore[topic][partition] < 0) {
-          continue
-        }
+        const offset = this.offsetStore[topic][partition]
+        const fallback = offset <= 0
         const toppar = {
           topic,
           partition: parseInt(partition, 10),
-          offset: this.offsetStore[topic][partition] + 1,
+          offset: fallback ? -offset : offset,
         }
-        const errOffset = this.getErrOffset(topic, partition)
-        if (errOffset !== undefined) {
-          toppar.offset = errOffset
-          // fallback
+        if (fallback) {
           await this.seek(toppar, DEFAULT_SEEK_TIMEOUT)
-          delete this.errOffsetStore[topic][partition]
+          console.log(`fallback seek to topicPartition: ${JSON.stringify(toppar)}`)
+        } else {
+          this.consumer.commitSync(toppar)
+          console.log(`committed topicPartition: ${JSON.stringify(toppar)}`)
         }
-        this.consumer.commitSync(toppar)
-        console.log(`committed topicPartition: ${JSON.stringify(toppar)}`)
-        this.offsetStore[topic][partition] = -1
+        delete this.offsetStore[topic][partition]
       }
     }
   }
@@ -212,12 +191,12 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
   async consume(
     cb: (message: KafkaMessage) => any,
     options: { size?: number; concurrency?: number } = {},
-  ): Promise<boolean | KafkaMessage[]> {
+  ): Promise<KafkaMessage[]> {
     // default option value
     setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
     setIfNotExist(options, 'concurrency', options.size)
 
-    return new Promise<boolean | KafkaMessage[]>((resolve, reject) => {
+    return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
       return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
@@ -227,27 +206,27 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
           reject(new ConsumerRuntimeError(err.message))
         }
 
-        try {
-          await bluebird.map(
-            messages,
-            async (message) => {
-              try {
-                await Promise.resolve(cb(message))
-                this.setOffset(message.topic, message.partition, message.offset)
-              } catch (err) {
-                this.setErrOffset(message.topic, message.partition, message.offset)
-                throw err
-              }
-            },
-            { concurrency: options.concurrency || DEFAULT_CONCURRENT },
-          )
-        } catch (e) {
-          await this.commits()
-          reject(new ConsumerRuntimeError(e.message))
-        }
-
-        await this.commits()
-        resolve(messages)
+        return bluebird.map(
+          messages,
+          async (message) => {
+            try {
+              await bluebird.resolve(cb(message))
+              this.setOffset(message.topic, message.partition, message.offset + 1)
+            } catch (e) {
+              this.setOffset(message.topic, message.partition, -message.offset)
+              throw e
+            }
+          },
+          { concurrency: options.concurrency || DEFAULT_CONCURRENT },
+        )
+          .then((() => {
+            return this.commits()
+              .then(() => (resolve(messages)))
+          }))
+          .catch((e) => {
+            return this.commits()
+              .then(() => (reject(new ConsumerRuntimeError(e.message))))
+          })
       })
     })
   }
@@ -286,12 +265,12 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
 
         return bluebird.map(
           messages,
-          (message) => {
-            return Promise.resolve(cb(message))
+          async (message) => {
+            await Promise.resolve(cb(message))
           },
           { concurrency: options.concurrency || DEFAULT_CONCURRENT },
         )
-          .then(messages => (resolve(messages)))
+          .then(() => (resolve(messages)))
           .catch(err => (reject(new ConsumerRuntimeError(err.message))))
       })
     })
