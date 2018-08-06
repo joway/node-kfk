@@ -1,4 +1,3 @@
-/* tslint:disable */
 import * as Kafka from 'node-rdkafka'
 import * as _ from 'lodash'
 import * as bluebird from 'bluebird'
@@ -20,7 +19,7 @@ const ErrorCode = Kafka.CODES.ERRORS
 
 type Store = { [key: string]: { [key: string]: number } }
 
-const _setIfNotExist = (conf: any, key: string, value: any) => {
+const setIfNotExist = (conf: any, key: string, value: any) => {
   if (conf[key] === undefined) {
     conf[key] = value
     return true
@@ -40,15 +39,15 @@ export abstract class KafkaBasicConsumer {
     this.dying = false
     this.topics = []
 
-    _setIfNotExist(conf, 'rebalance_cb', (err: any, assignment: any) => {
+    setIfNotExist(conf, 'rebalance_cb', (err: any, assignment: any) => {
       if (err.code === ErrorCode.ERR__ASSIGN_PARTITIONS) {
         this.consumer.assign(assignment)
-        let rebalance_log = 'consumer rebalance : '
+        let rebalanceLog = 'consumer rebalance : '
         for (const assign of assignment) {
-          rebalance_log += `{topic ${assign.topic}, partition: ${assign.partition}} `
+          rebalanceLog += `{topic ${assign.topic}, partition: ${assign.partition}} `
         }
-        console.log(rebalance_log)
-      } else if (err.code == ErrorCode.ERR__REVOKE_PARTITIONS) {
+        console.log(rebalanceLog)
+      } else if (err.code === ErrorCode.ERR__REVOKE_PARTITIONS) {
         this.consumer.unassign()
       } else {
         console.error(err)
@@ -131,8 +130,8 @@ export abstract class KafkaBasicConsumer {
 // Otherwise, it will to been blocked on the offset where throw Error
 export class KafkaALOConsumer extends KafkaBasicConsumer {
   constructor(conf: any, topicConf: any = {}) {
-    _setIfNotExist(conf, 'enable.auto.commit', false)
-    _setIfNotExist(conf, 'enable.auto.offset.store', false)
+    setIfNotExist(conf, 'enable.auto.commit', false)
+    setIfNotExist(conf, 'enable.auto.offset.store', false)
 
     super(conf, topicConf)
   }
@@ -193,7 +192,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         }
         const toppar = {
           topic,
-          partition: parseInt(partition),
+          partition: parseInt(partition, 10),
           offset: this.offsetStore[topic][partition] + 1,
         }
         const errOffset = this.getErrOffset(topic, partition)
@@ -215,8 +214,8 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     options: { size?: number; concurrency?: number } = {},
   ): Promise<boolean | KafkaMessage[]> {
     // default option value
-    _setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
-    _setIfNotExist(options, 'concurrency', options.size)
+    setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
+    setIfNotExist(options, 'concurrency', options.size)
 
     return new Promise<boolean | KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
@@ -231,7 +230,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         try {
           await bluebird.map(
             messages,
-            async message => {
+            async (message) => {
               try {
                 await Promise.resolve(cb(message))
                 this.setOffset(message.topic, message.partition, message.offset)
@@ -257,8 +256,8 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 // `At Most Once` Consumer
 export class KafkaAMOConsumer extends KafkaBasicConsumer {
   constructor(conf: any, topicConf: any = {}) {
-    _setIfNotExist(conf, 'enable.auto.commit', true)
-    _setIfNotExist(conf, 'enable.auto.offset.store', true)
+    setIfNotExist(conf, 'enable.auto.commit', true)
+    setIfNotExist(conf, 'enable.auto.offset.store', true)
 
     super(conf, topicConf)
   }
@@ -278,10 +277,8 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
     options: { size?: number; concurrency?: number } = {},
   ): Promise<boolean | KafkaMessage[]> {
     // default option value
-    _setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
-    _setIfNotExist(options, 'concurrency', options.size)
-
-    let success = true
+    setIfNotExist(options, 'size', DEFAULT_CONSUME_SIZE)
+    setIfNotExist(options, 'concurrency', options.size)
 
     return new Promise<boolean | KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
@@ -296,19 +293,15 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
         try {
           await bluebird.map(
             messages,
-            async message => {
-              try {
-                await Promise.resolve(cb(message))
-              } catch (e) {
-                success = false
-              }
+            async (message) => {
+              await Promise.resolve(cb(message))
             },
             { concurrency: options.concurrency || DEFAULT_CONCURRENT },
           )
         } catch (e) {
           reject(new ConsumerRuntimeError(err.message))
         }
-        return resolve(success)
+        resolve(messages)
       })
     })
   }
