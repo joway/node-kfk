@@ -184,8 +184,10 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
   }
 
   async commits() {
-    for (const topic of _.keys(this.offsetStore)) {
-      for (const partition of _.keys(this.offsetStore[topic])) {
+    const topics = _.keys(this.offsetStore)
+    for (const topic of topics) {
+      const partitions = _.keys(this.offsetStore[topic])
+      for (const partition of partitions) {
         if (this.offsetStore[topic][partition] < 0) {
           continue
         }
@@ -199,11 +201,11 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
           toppar.offset = errOffset
           // fallback
           await this.seek(toppar, DEFAULT_SEEK_TIMEOUT)
+          delete this.errOffsetStore[topic][partition]
         }
         this.consumer.commitSync(toppar)
-        console.log(`committed ${JSON.stringify(toppar)}`)
-        this.offsetStore[toppar.topic][toppar.partition] = -1
-        delete this.errOffsetStore[toppar.topic][toppar.partition]
+        console.log(`committed topicPartition: ${JSON.stringify(toppar)}`)
+        this.offsetStore[topic][partition] = -1
       }
     }
   }
@@ -237,12 +239,15 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
             }
           }, { concurrency: options.concurrency || DEFAULT_CONCURRENT })
         } catch (e) {
+          console.log(e)
           await this.commits()
-          reject(new ConsumerRuntimeError(e.message))
+          return reject(new ConsumerRuntimeError(e.message))
         }
 
+        console.log('commit start')
         await this.commits()
-        resolve(messages)
+        console.log('finish')
+        return resolve(messages)
       })
     })
   }
