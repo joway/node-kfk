@@ -1,3 +1,4 @@
+/* tslint:disable */
 import test from 'ava'
 import * as bluebird from 'bluebird'
 import * as _ from 'lodash'
