@@ -10,11 +10,11 @@ const main = async () => {
   const consumer = new KafkaAMOConsumer({
     'group.id': 'amo-consumer-test-1',
     'metadata.broker.list': '127.0.0.1:9092',
-    'auto.offset.reset': 'largest',
     'enable.auto.offset.store': true,
-    'auto.commit.interval.ms': 500,
     'enable.auto.commit': true,
-  }, {})
+  }, {
+      'auto.offset.reset': 'largest',
+    })
   await consumer.connect()
   await consumer.subscribe([
     'rdkafka-test0',

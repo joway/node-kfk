@@ -19,17 +19,18 @@ const main = async () => {
 
   await producer.connect()
 
-  console.log('connected')
+  console.log('producer connected')
 
   while (true) {
-    const msg = `${new Date().getTime()}-${crypto.randomBytes(20).toString('hex')}`
-    console.log(msg)
-
-    await producer.produce(_.sample([
+    const topic = _.sample([
       'rdkafka-test0',
       // 'rdkafka-test1',
-      // 'rdkafka-test2',
-    ]), null, msg)
+      // 'rdkafka-demo-1',
+    ])
+    const msg = `${new Date().getTime()}-${crypto.randomBytes(20).toString('hex')}`
+    console.log(`create msg on topic ${topic} : ${msg}`)
+
+    await producer.produce(topic, null, msg)
 
     await bluebird.delay(1)
   }

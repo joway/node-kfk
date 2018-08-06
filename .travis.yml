@@ -1,0 +1,26 @@
+language: node_js
+sudo: required
+node_js:
+  - "8"
+  - "10"
+cache:
+  directories:
+    - "node_modules"
+    - "kafka"
+before_install:
+  - wget http://www.us.apache.org/dist/kafka/0.10.2.2/kafka_2.10-0.10.2.2.tgz -O kafka.tgz
+  - mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
+  - echo "auto.create.topics.enable=true" >> ./kafka/config/server.properties
+  - echo "num.partitions=3" >> ./kafka/config/server.properties
+  - cat ./kafka/config/zookeeper.properties
+  - cat ./kafka/config/server.properties
+  - nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties > /dev/null 2>&1 &"
+  - nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties > /dev/null 2>&1 &"
+install:
+  - npm i npm -g
+  - npm install
+before_script:
+  - npm run build
+script:
+  - npm run lint
+  - NODE_ENV=ci ava dist/tests -v -s
