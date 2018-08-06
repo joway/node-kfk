@@ -21,7 +21,7 @@
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
-    "lint": "tslint --project .",
+    "lint": "tslint src/**/*.ts --project .",
     "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests -v",
     "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
     "pub": "npm run build && npm publish"
@@ -48,6 +48,7 @@
     "sinon": "4.0.1",
     "supertest": "3.0.0",
     "tslint": "5.9.1",
+    "tslint-config-airbnb": "^5.9.2",
     "tslint-jike-node": "0.0.14",
     "typescript": "2.9.2"
   }

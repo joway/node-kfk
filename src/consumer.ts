@@ -90,7 +90,7 @@ export abstract class KafkaBasicConsumer {
   }
 
   private setGracefulDeath() {
-    const _gracefulDeath = async () => {
+    const gracefulDeath = async () => {
       this.dying = true
       await this.gracefulDead()
       await this.disconnect()
@@ -98,9 +98,9 @@ export abstract class KafkaBasicConsumer {
       console.log('consumer graceful died')
       process.exit(0)
     }
-    process.on('SIGINT', _gracefulDeath)
-    process.on('SIGQUIT', _gracefulDeath)
-    process.on('SIGTERM', _gracefulDeath)
+    process.on('SIGINT', gracefulDeath)
+    process.on('SIGQUIT', gracefulDeath)
+    process.on('SIGTERM', gracefulDeath)
   }
 
   async subscribe(topics: string[]) {

@@ -23,10 +23,10 @@ export interface KafkaMetadata {
   topics: {
     name: string
     partitions: {
-      id: number
-      leader: number
-      replicas: number[]
-      isrs: number[]
-    }[]
-  }[]
+      id: number,
+      leader: number,
+      replicas: number[],
+      isrs: number[],
+    }[],
+  }[],
 }

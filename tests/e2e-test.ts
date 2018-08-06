@@ -6,7 +6,6 @@ import * as sinon from 'sinon'
 
 import { KafkaProducer } from '../src/producer'
 import { KafkaALOConsumer, KafkaAMOConsumer } from '../src/consumer'
-import { resolve } from 'path'
 
 const BROKERS = '127.0.0.1:9092'
 const TOPIC = 'e2e-test'

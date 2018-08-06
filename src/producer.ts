@@ -69,7 +69,7 @@ export abstract class KafkaBasicProducer {
   }
 
   private setGracefulDeath() {
-    const _gracefulDeath = async () => {
+    const gracefulDeath = async () => {
       this.dying = true
       // cleanup
       await this.gracefulDead()
@@ -78,9 +78,9 @@ export abstract class KafkaBasicProducer {
       console.log('producer graceful died')
       process.exit(0)
     }
-    process.on('SIGINT', _gracefulDeath)
-    process.on('SIGQUIT', _gracefulDeath)
-    process.on('SIGTERM', _gracefulDeath)
+    process.on('SIGINT', gracefulDeath)
+    process.on('SIGQUIT', gracefulDeath)
+    process.on('SIGTERM', gracefulDeath)
   }
 }
 
