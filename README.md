@@ -1,5 +1,6 @@
 # Node-Kfk
 
+[![Build Status](https://travis-ci.org/joway/node-kfk.svg?branch=master)](https://travis-ci.org/joway/node-kfk)
 [![npm](https://img.shields.io/npm/v/kfk.svg)](https://www.npmjs.com/package/kfk)
 [![npm](https://img.shields.io/npm/dt/kfk.svg)](https://www.npmjs.com/package/kfk)
 
