@@ -22,9 +22,6 @@ const producer = new KafkaProducer({
     'metadata.broker.list': '127.0.0.1:9092',
     'compression.codec': 'gzip',
     'socket.keepalive.enable': true,
-    'queue.buffering.max.messages': 100,
-    'queue.buffering.max.ms': 100,
-    'batch.num.messages': 100000,
   }, {})
 
 await producer.connect()
@@ -48,10 +45,11 @@ while (true) {
 const consumer = new KafkaALOConsumer({
   'group.id': 'alo-consumer-test-1',
   'metadata.broker.list': '127.0.0.1:9092',
-  'auto.offset.reset': 'largest',
   'enable.auto.offset.store': false,
   'enable.auto.commit': false,
-}, {})
+}, {
+  'auto.offset.reset': 'largest',
+})
 await consumer.connect()
 await consumer.subscribe([
   'rdkafka-test0',
@@ -75,10 +73,11 @@ while (true) {
 const consumer = new KafkaAMOConsumer({
   'group.id': 'alo-consumer-test-1',
   'metadata.broker.list': '127.0.0.1:9092',
-  'auto.offset.reset': 'largest',
   'enable.auto.offset.store': true,
   'enable.auto.commit': true,
-}, {})
+}, {
+  'auto.offset.reset': 'largest',
+})
 await consumer.connect()
 await consumer.subscribe([
   'rdkafka-test0',
