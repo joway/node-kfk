@@ -9,7 +9,6 @@ import { KafkaProducer } from '../src/producer'
 import { KafkaALOConsumer, KafkaAMOConsumer } from '../src/consumer'
 
 const BROKERS = '127.0.0.1:9092'
-const TOPIC = 'e2e-test'
 
 test.beforeEach(t => {
   t.context.sandbox = sinon.sandbox.create()
@@ -91,6 +90,7 @@ test('produce', async t => {
       (message: any) => {
         count++
         t.true(count <= TOTAL)
+        return message
       },
       {
         size: 100,
@@ -98,7 +98,7 @@ test('produce', async t => {
       },
     )
   ), TOTAL)
-  t.is(messages.length, count)
+  t.is(_.pullAll(messages, undefined).length, count)
   t.is(count, TOTAL)
 
   await producer.disconnect()

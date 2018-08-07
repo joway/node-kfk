@@ -210,8 +210,9 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
           messages,
           async (message) => {
             try {
-              await bluebird.resolve(cb(message))
+              const ret = await bluebird.resolve(cb(message))
               this.setOffset(message.topic, message.partition, message.offset + 1)
+              return ret
             } catch (e) {
               this.setOffset(message.topic, message.partition, -message.offset)
               throw e
@@ -219,14 +220,16 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
           },
           { concurrency: options.concurrency || DEFAULT_CONCURRENT },
         )
-          .then((() => {
-            return this.commits()
-              .then(() => (resolve(messages)))
-          }))
-          .catch((e) => {
-            return this.commits()
-              .then(() => (reject(new ConsumerRuntimeError(e.message))))
-          })
+          .then((results: any[]) => (
+            this.commits()
+              .then(() => (resolve(results)))
+          ))
+          .catch((e: Error) => (
+            this.commits()
+              .then(() => {
+                reject(new ConsumerRuntimeError(e.message))
+              })
+          ))
       })
     })
   }
@@ -266,12 +269,12 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
         return bluebird.map(
           messages,
           async (message) => {
-            await Promise.resolve(cb(message))
+            return await Promise.resolve(cb(message))
           },
           { concurrency: options.concurrency || DEFAULT_CONCURRENT },
         )
-          .then(() => (resolve(messages)))
-          .catch(err => (reject(new ConsumerRuntimeError(err.message))))
+          .then((results: any[]) => (resolve(results)))
+          .catch(e => (reject(new ConsumerRuntimeError(e.message))))
       })
     })
   }
