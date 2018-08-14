@@ -1,6 +1,7 @@
 import * as Kafka from 'node-rdkafka'
 import * as _ from 'lodash'
 import * as bluebird from 'bluebird'
+import * as winston from 'winston'
 
 import { TopicPartition, KafkaMetadata, KafkaMessage, KafkaMessageError } from './types'
 import {
@@ -29,6 +30,8 @@ const setIfNotExist = (conf: any, key: string, value: any) => {
 
 export abstract class KafkaBasicConsumer {
   public consumer: Kafka.KafkaConsumer
+  protected logger: winston.Logger
+  protected debug: boolean
   protected dying: boolean
   protected topics: string[]
   /**
@@ -49,15 +52,24 @@ export abstract class KafkaBasicConsumer {
         for (const assign of assignment) {
           rebalanceLog += `{topic ${assign.topic}, partition: ${assign.partition}} `
         }
-        console.log(rebalanceLog)
+        this.logger.info(rebalanceLog)
       } else if (err.code === ErrorCode.ERR__REVOKE_PARTITIONS) {
         this.consumer.unassign()
       } else {
-        console.error(err)
+        this.logger.error(err)
       }
     })
 
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
+
+    this.debug = conf.debug === undefined ? false : conf.debug
+    this.logger = winston.createLogger({
+      level: this.debug ? 'debug' : 'info',
+      format: winston.format.simple(),
+      transports: [
+        new winston.transports.Console(),
+      ],
+    })
 
     this.setGracefulDeath()
   }
@@ -70,7 +82,7 @@ export abstract class KafkaBasicConsumer {
         if (err) {
           reject(new DisconnectError(err.message))
         }
-        console.log('consumer disconnect')
+        this.logger.info('consumer disconnect')
         resolve(data)
       })
     })
@@ -97,7 +109,7 @@ export abstract class KafkaBasicConsumer {
       await this.gracefulDead()
       await this.disconnect()
 
-      console.log('consumer graceful died')
+      this.logger.info('consumer graceful died')
       process.exit(0)
     }
     process.on('SIGINT', gracefulDeath)
@@ -178,10 +190,10 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         }
         if (fallback) {
           await this.seek(toppar, DEFAULT_SEEK_TIMEOUT)
-          console.log(`fallback seek to topicPartition: ${JSON.stringify(toppar)}`)
+          this.logger.warning(`fallback seek to topicPartition: ${JSON.stringify(toppar)}`)
         } else {
           this.consumer.commitSync(toppar)
-          console.log(`committed topicPartition: ${JSON.stringify(toppar)}`)
+          this.logger.debug(`committed topicPartition: ${JSON.stringify(toppar)}`)
         }
         delete this.offsetStore[topic][partition]
       }
@@ -198,7 +210,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
     return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
-      return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
+      return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
           reject(new ConnectionDeadError('Connection has been dead or is dying'))
         }
@@ -258,7 +270,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
 
     return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
-      return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
+      return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
           reject(new ConnectionDeadError('Connection has been dead or is dying'))
         }
