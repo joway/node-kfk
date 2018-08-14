@@ -8,6 +8,7 @@ import {
   ProducerFlushError,
   ProducerRuntimeError,
 } from './errors'
+import { Options } from './types';
 
 const ErrorCode = Kafka.CODES.ERRORS
 const FLUSH_TIMEOUT = 10000 // ms
@@ -19,12 +20,12 @@ export abstract class KafkaBasicProducer {
   protected dying: boolean
   protected flushing: boolean
 
-  constructor(conf: any, topicConf: any = {}) {
+  constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     this.dying = false
     this.flushing = false
     this.client = new Kafka.Producer(conf, topicConf)
 
-    this.debug = conf.debug === undefined ? false : conf.debug
+    this.debug = options.debug === undefined ? false : options.debug
     this.logger = winston.createLogger({
       level: this.debug ? 'debug' : 'info',
       format: winston.format.simple(),

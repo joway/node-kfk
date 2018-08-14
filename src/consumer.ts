@@ -1,9 +1,10 @@
 import * as Kafka from 'node-rdkafka'
 import * as _ from 'lodash'
 import * as bluebird from 'bluebird'
+import * as assert from 'assert'
 import * as winston from 'winston'
 
-import { TopicPartition, KafkaMetadata, KafkaMessage, KafkaMessageError } from './types'
+import { TopicPartition, KafkaMetadata, KafkaMessage, Options } from './types'
 import {
   ConnectingError,
   DisconnectError,
@@ -41,7 +42,7 @@ export abstract class KafkaBasicConsumer {
    */
   protected offsetStore: Store = {}
 
-  constructor(conf: any, topicConf: any = {}) {
+  constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     this.dying = false
     this.topics = []
 
@@ -62,7 +63,10 @@ export abstract class KafkaBasicConsumer {
 
     this.consumer = new Kafka.KafkaConsumer(conf, topicConf)
 
-    this.debug = conf.debug === undefined ? false : conf.debug
+    this.debug = options.debug === undefined ? false : options.debug
+
+    if (this.debug) { console.log(`debug mode : ${this.debug}`) }
+
     this.logger = winston.createLogger({
       level: this.debug ? 'debug' : 'info',
       format: winston.format.simple(),
@@ -129,11 +133,14 @@ export abstract class KafkaBasicConsumer {
   }
 
   seek(toppar: TopicPartition, timeout: number) {
+    if (this.debug) { this.logger.debug(`seek ${JSON.stringify(toppar)}`) }
+
     return new Promise((resolve, reject) => {
       this.consumer.seek(toppar, timeout, (err: Error) => {
         if (err) {
           reject(new SeekError(err.message))
         }
+        this.logger.debug('seek finished')
         resolve()
       })
     })
@@ -144,19 +151,29 @@ export abstract class KafkaBasicConsumer {
 // You must guarantee that your consumer cb function will not throw any Error.
 // Otherwise, it will to been blocked on the offset where throw Error
 export class KafkaALOConsumer extends KafkaBasicConsumer {
-  constructor(conf: any, topicConf: any = {}) {
+  constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     setIfNotExist(conf, 'enable.auto.commit', false)
     setIfNotExist(conf, 'enable.auto.offset.store', false)
 
-    super(conf, topicConf)
+    super(conf, topicConf, options)
   }
 
   private setOffset(topic: string, partition: number, offset: number) {
     if (!this.offsetStore[topic]) {
       this.offsetStore[topic] = {}
     }
-    const curOffset = this.offsetStore[topic][partition] || 0
-    this.offsetStore[topic][partition] = Math.max(curOffset, offset)
+    const curOffset = this.offsetStore[topic][partition]
+    if (offset <= 0) {
+      if (curOffset === undefined || curOffset > 0) {
+        this.offsetStore[topic][partition] = offset
+      } else {
+        this.offsetStore[topic][partition] = Math.max(curOffset, offset)
+      }
+    } else {
+      if (curOffset > 0) {
+        this.offsetStore[topic][partition] = Math.max(curOffset, offset)
+      }
+    }
   }
 
   async gracefulDead(): Promise<boolean> {
@@ -177,6 +194,8 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
   async commits() {
     const offsetStore = this.offsetStore
+    if (this.debug) { this.logger.debug('offsetStore', JSON.stringify(offsetStore)) }
+
     const topics = _.keys(offsetStore)
     for (const topic of topics) {
       const partitions = _.keys(this.offsetStore[topic])
@@ -188,12 +207,17 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
           partition: parseInt(partition, 10),
           offset: fallback ? -offset : offset,
         }
+        const topparStr = JSON.stringify(toppar)
+
+        this.logger.debug(`committing topicPartition ${topparStr}`)
+
         if (fallback) {
           await this.seek(toppar, DEFAULT_SEEK_TIMEOUT)
-          this.logger.warning(`fallback seek to topicPartition: ${JSON.stringify(toppar)}`)
+          this.logger.info(`fallback seek to topicPartition: ${topparStr}`)
         } else {
           this.consumer.commitSync(toppar)
-          this.logger.debug(`committed topicPartition: ${JSON.stringify(toppar)}`)
+
+          this.logger.debug(`committed topicPartition: ${topparStr}`)
         }
         delete this.offsetStore[topic][partition]
       }
@@ -212,36 +236,34 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
       return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
-          reject(new ConnectionDeadError('Connection has been dead or is dying'))
+          return reject(new ConnectionDeadError('Connection has been dead or is dying'))
         }
         if (err) {
-          reject(new ConsumerRuntimeError(err.message))
+          return reject(new ConsumerRuntimeError(err.message))
         }
+        if (this.debug) { this.logger.debug('fetch messages', JSON.stringify(messages)) }
 
-        return bluebird.map(
-          messages,
-          async (message) => {
-            try {
-              const ret = await bluebird.resolve(cb(message))
-              this.setOffset(message.topic, message.partition, message.offset + 1)
-              return ret
-            } catch (e) {
-              this.setOffset(message.topic, message.partition, -message.offset)
-              throw e
-            }
-          },
-          { concurrency: options.concurrency || DEFAULT_CONCURRENT },
-        )
-          .then((results: any[]) => (
-            this.commits()
-              .then(() => (resolve(results)))
-          ))
-          .catch((e: Error) => (
-            this.commits()
-              .then(() => {
-                reject(new ConsumerRuntimeError(e.message))
-              })
-          ))
+        try {
+          const results = await bluebird.map(
+            messages,
+            async (message) => {
+              try {
+                const ret = await bluebird.resolve(cb(message))
+                this.setOffset(message.topic, message.partition, message.offset + 1)
+                return ret
+              } catch (e) {
+                this.setOffset(message.topic, message.partition, -message.offset)
+                throw e
+              }
+            },
+            { concurrency: options.concurrency || DEFAULT_CONCURRENT },
+          )
+          await this.commits()
+          return resolve(results)
+        } catch (e) {
+          await this.commits()
+          return reject(new ConsumerRuntimeError(e.message))
+        }
       })
     })
   }
@@ -249,11 +271,11 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
 // `At Most Once` Consumer
 export class KafkaAMOConsumer extends KafkaBasicConsumer {
-  constructor(conf: any, topicConf: any = {}) {
+  constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     setIfNotExist(conf, 'enable.auto.commit', true)
     setIfNotExist(conf, 'enable.auto.offset.store', true)
 
-    super(conf, topicConf)
+    super(conf, topicConf, options)
   }
 
   async gracefulDead(): Promise<boolean> {

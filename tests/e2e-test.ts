@@ -28,7 +28,7 @@ async function setUpProducer(topic: string, mesCount: number = 100) {
     'client.id': `client-id-test`,
     'compression.codec': 'gzip',
     'metadata.broker.list': BROKERS,
-  })
+  }, {}, { debug: false })
   await producer.connect()
   for (let i = 0; i < mesCount; i++) {
     const msg = `${new Date().getTime()}-${crypto.randomBytes(20).toString('hex')}`
@@ -37,7 +37,7 @@ async function setUpProducer(topic: string, mesCount: number = 100) {
   return producer
 }
 
-async function setUpConsumer(ConsumerType: any, conf: any, topicConf: any = {}) {
+async function setUpConsumer(ConsumerType: any, conf: any, topicConf: any = {}, options: any = {}) {
   const consumer = new ConsumerType(
     {
       'group.id': 'kafka-group',
@@ -49,6 +49,7 @@ async function setUpConsumer(ConsumerType: any, conf: any, topicConf: any = {}) 
     {
       ...topicConf,
     },
+    options,
   )
 
   await consumer.connect()
@@ -59,6 +60,7 @@ async function untilFetchMax<T>(handler: Function, maxCount: number) {
   let results: T[] = []
   while (results.length < maxCount) {
     const items = await handler()
+    console.log('untilFetchMax fetched ', JSON.stringify(items))
     results = _.concat(results, items)
   }
   return results
@@ -85,19 +87,17 @@ test('produce', async t => {
   consumer.subscribe([topic])
 
   let count = 0
-  const messages: any[] = await untilFetchMax<any>(async () => (
-    consumer.consume(
-      (message: any) => {
-        count++
-        t.true(count <= TOTAL)
-        return message
-      },
-      {
-        size: 100,
-        concurrency: 100,
-      },
-    )
-  ), TOTAL)
+  const messages: any[] = await consumer.consume(
+    (message: any) => {
+      count++
+      t.true(count <= TOTAL)
+      return message
+    },
+    {
+      size: 100,
+      concurrency: 100,
+    },
+  )
   t.is(_.pullAll(messages, undefined).length, count)
   t.is(count, TOTAL)
 
@@ -253,13 +253,17 @@ test('alo consumer with error fallback', async t => {
     {
       'auto.offset.reset': 'earliest',
     },
+    {
+      debug: true,
+    },
   )
   consumer.subscribe([topic])
+  console.log(`subscribed topic ${topic}`)
 
   let count = 0
   let error_pos: number = -1
-  let error_count = 0
   const error_partition = 0
+  let error_count = 0
   try {
     await consumer.consume(
       (message: any) => {
@@ -271,27 +275,35 @@ test('alo consumer with error fallback', async t => {
         }
         if (error_pos < 0 && message.partition === error_partition) {
           error_pos = pos
+          console.log(`hit error ${error_pos} ${message.partition}`)
           throw Error(`test error ${pos}`)
         }
+
+        console.log(`consumed message ${JSON.stringify(message)}`)
       },
       {
         size: 100,
-        concurrency: 100,
+        concurrency: 10,
       },
     )
   } catch (err) {
     t.true(err.message.includes('test error'))
   }
 
+  console.log(`count ${count}, error_count ${error_count}, error_pos ${error_pos}`)
   const repetition: number[] = []
   await consumer.consume(
     (message: any) => {
       const pos = parseInt(message.value.toString('utf-8'))
       repetition.push(pos)
+      return message
     },
     {
       size: 100,
       concurrency: 100,
+    },
+    {
+      debug: true,
     },
   )
   t.true(repetition.includes(error_pos))
@@ -363,6 +375,8 @@ test('amo consumer with earliest', async t => {
     },
   )
 
+  await consumer.disconnect()
+  await producer.disconnect()
   t.is(count, TOTAL * 2)
 })
 
@@ -387,6 +401,9 @@ test('amo consumer with latest', async t => {
     },
     {
       'auto.offset.reset': 'latest',
+    },
+    {
+      'debug': true,
     },
   )
   consumer.subscribe([topic])
@@ -447,6 +464,9 @@ test('amo consumer with error fallback', async t => {
     },
     {
       'auto.offset.reset': 'earliest',
+    },
+    {
+      debug: true,
     },
   )
   consumer.subscribe([topic])
