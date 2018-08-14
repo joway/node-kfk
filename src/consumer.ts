@@ -198,7 +198,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
     return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
-      return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
+      return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
           reject(new ConnectionDeadError('Connection has been dead or is dying'))
         }
@@ -258,7 +258,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
 
     return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
-      return this.consumer.consume(options.size, async (err: Error, messages: KafkaMessage[]) => {
+      return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
         if (this.dying) {
           reject(new ConnectionDeadError('Connection has been dead or is dying'))
         }
