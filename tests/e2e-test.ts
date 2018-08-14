@@ -87,17 +87,19 @@ test('produce', async t => {
   consumer.subscribe([topic])
 
   let count = 0
-  const messages: any[] = await consumer.consume(
-    (message: any) => {
-      count++
-      t.true(count <= TOTAL)
-      return message
-    },
-    {
-      size: 100,
-      concurrency: 100,
-    },
-  )
+  const messages: any[] = await untilFetchMax(async () => (
+    consumer.consume(
+      (message: any) => {
+        count++
+        t.true(count <= TOTAL)
+        return message
+      },
+      {
+        size: 100,
+        concurrency: 100,
+      },
+    )
+  ), TOTAL)
   t.is(_.pullAll(messages, undefined).length, count)
   t.is(count, TOTAL)
 
