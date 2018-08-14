@@ -1,6 +1,6 @@
 {
   "name": "kfk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -34,9 +34,9 @@
     "@types/bluebird": "3.5.20",
     "@types/lodash": "4.14.106",
     "bluebird": "3.5.1",
-    "lodash": "^4.17.5",
-    "moment": "^2.22.2",
-    "node-rdkafka": "2.3.4"
+    "lodash": "4.17.5",
+    "moment": "2.22.2",
+    "node-rdkafka": "2.4.0"
   },
   "devDependencies": {
     "@types/node": "^10.5.6",
