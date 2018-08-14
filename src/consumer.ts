@@ -194,7 +194,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
   async commits() {
     const offsetStore = this.offsetStore
-    if (this.debug) { this.logger.debug('offsetStore', JSON.stringify(offsetStore)) }
+    if (this.debug) { this.logger.debug(`offsetStore ${JSON.stringify(offsetStore)}`) }
 
     const topics = _.keys(offsetStore)
     for (const topic of topics) {
@@ -241,7 +241,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         if (err) {
           return reject(new ConsumerRuntimeError(err.message))
         }
-        if (this.debug) { this.logger.debug('fetch messages', JSON.stringify(messages)) }
+        if (this.debug) { this.logger.debug(`fetch messages ${JSON.stringify(messages)}`) }
 
         try {
           const results = await bluebird.map(
