@@ -6,15 +6,15 @@
 
 The high-level node kafka client based on node-rdkafka .
 
-`KafkaALOConsumer` will monitor your consume callback function execute state and fallback the offset when any error occur . If there is any `Error` throwed out in your consumer callback function , it will to been **blocked** on the offset where the error throw . It guarantee that all messages will been consumed at least once .
+`KafkaALOConsumer` will monitor your consume callback function execute state and fallback to the offset when any error occur . If there are any `Error` throwed out in your consumer callback function , it will to been **blocked** on the offset where the error throw . It guarantee that all messages will been consumed at least once .
 
-`KafkaAMOConsumer` is a simple consumer which auto commits the offsets . It has the better performance than `KafkaALOConsumer`, but not guarantee that all messages will been consumed and one message will be consumed at most once .
+`KafkaAMOConsumer` is a simple consumer and auto commits the offsets when fetched the messsages . It has better performance than `KafkaALOConsumer`, but not guarantee that all messages will been consumed. In `KafkaALOConsumer `, one message will be consumed at most once .
 
-Even using `KafkaAMOConsumer` , you can also take some Fault-Tolerance technology such as retry policy to ensure that message will be consumed correctly .
+Even using `KafkaAMOConsumer` , you can also take some Fault-Tolerance technology such as retry policy to ensure that message will be consumed correctly as far as possible .
 
 If your don't care little messages lose (when disaster occur), we recommend you to use `KafkaAMOConsumer` for better performance .
 
-Has been tested on:
+The client Has been tested on:
 
 ```yaml
 - os: linux
@@ -48,15 +48,15 @@ npm i kfk -S
 
 ```js
 const conf = {
-    'client.id': 'kafka',
-    'metadata.broker.list': '127.0.0.1:9092',
-    'compression.codec': 'gzip',
-    'socket.keepalive.enable': true,
+  'client.id': 'kafka',
+  'metadata.broker.list': '127.0.0.1:9092',
+  'compression.codec': 'gzip',
+  'socket.keepalive.enable': true,
 }
 const topicConf = {
 }
 const options = {
-	debug: false,
+  debug: false,
 }
 
 const producer = new KafkaProducer(conf, topicConf, options)
@@ -84,10 +84,10 @@ const conf = {
   'metadata.broker.list': '127.0.0.1:9092',
 }
 const topicConf = {
-	'auto.offset.reset': 'largest',
+  'auto.offset.reset': 'largest',
 }
 const options = {
-	debug: false,
+  debug: false,
 }
 
 const consumer = new KafkaALOConsumer(conf, topicConf, options)
@@ -116,10 +116,10 @@ const conf = {
   'metadata.broker.list': '127.0.0.1:9092',
 }
 const topicConf = {
-	'auto.offset.reset': 'largest',
+  'auto.offset.reset': 'largest',
 }
 const options = {
-	debug: false,
+  debug: false,
 }
 
 const consumer = new KafkaAMOConsumer(conf, topicConf, options)
