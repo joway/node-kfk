@@ -1,6 +1,6 @@
 {
   "name": "kfk",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

@@ -173,6 +173,15 @@ test('alo consumer with earliest', async t => {
   )), TOTAL * 2)
 
   t.is(count, TOTAL * 2)
+
+  const news = await consumer.consume(
+    null,
+    {
+      size: 100,
+      concurrency: 100,
+    },
+  )
+  t.is(news.length, 0)
 })
 
 test('alo consumer with latest', async t => {
