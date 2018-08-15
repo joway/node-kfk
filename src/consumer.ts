@@ -133,14 +133,21 @@ export abstract class KafkaBasicConsumer {
   }
 
   seek(toppar: TopicPartition, timeout: number) {
-    if (this.debug) { this.logger.debug(`seek ${JSON.stringify(toppar)}`) }
+    let seekBegin: Date
+    if (this.debug) {
+      seekBegin = new Date()
+      this.logger.debug(`seek ${JSON.stringify(toppar)}`)
+    }
 
     return new Promise((resolve, reject) => {
       this.consumer.seek(toppar, timeout, (err: Error) => {
         if (err) {
           reject(new SeekError(err.message))
         }
-        this.logger.debug('seek finished')
+        if (this.debug) {
+          const seekMs = new Date().getTime() - seekBegin.getTime()
+          this.logger.debug(`seek elapsed time ${seekMs} ms`)
+        }
         resolve()
       })
     })
@@ -194,7 +201,11 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
 
   async commits() {
     const offsetStore = this.offsetStore
-    if (this.debug) { this.logger.debug(`offsetStore ${JSON.stringify(offsetStore)}`) }
+    let commitsBegin: Date
+    if (this.debug) {
+      commitsBegin = new Date()
+      this.logger.debug(`offsetStore ${JSON.stringify(offsetStore)}`)
+    }
 
     const topics = _.keys(offsetStore)
     for (const topic of topics) {
@@ -222,6 +233,9 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         delete this.offsetStore[topic][partition]
       }
     }
+    if (this.debug) {
+      this.logger.debug(`commits elapsed time ${new Date().getTime() - commitsBegin!.getTime()} ms`)
+    }
   }
 
   async consume(
@@ -241,7 +255,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         if (err) {
           return reject(new ConsumerRuntimeError(err.message))
         }
-        if (this.debug) { this.logger.debug(`fetch messages ${JSON.stringify(messages)}`) }
+        if (this.debug) { this.logger.debug(`fetched ${messages.length} messages`) }
 
         try {
           const results = await bluebird.map(
