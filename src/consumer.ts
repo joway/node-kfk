@@ -220,8 +220,6 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         }
         const topparStr = JSON.stringify(toppar)
 
-        this.logger.debug(`committing topicPartition ${topparStr}`)
-
         if (fallback) {
           await this.seek(toppar, DEFAULT_SEEK_TIMEOUT)
           this.logger.info(`fallback seek to topicPartition: ${topparStr}`)
