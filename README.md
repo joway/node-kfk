@@ -6,6 +6,36 @@
 
 The high-level node kafka client based on node-rdkafka .
 
+`KafkaALOConsumer` will monitor your consume callback function execute state and fallback the offset when any error occur . If there is any `Error` throwed out in your consumer callback function , it will to been **blocked** on the offset where the error throw . It guarantee that all messages will been consumed at least once .
+
+`KafkaAMOConsumer` is a simple consumer which auto commits the offsets . It has the better performance than `KafkaALOConsumer`, but not guarantee that all messages will been consumed and one message will be consumed at most once .
+
+Even using `KafkaAMOConsumer` , you can also take some Fault-Tolerance technology such as retry policy to ensure that message will be consumed correctly .
+
+If your don't care little messages lose (when disaster occur), we recommend you to use `KafkaAMOConsumer` for better performance .
+
+Has been tested on:
+
+```yaml
+- os: linux
+  env: KAFKA_VERSION=0.10.2.2
+  node_js: 8
+- os: linux
+  env: KAFKA_VERSION=0.10.2.2
+  node_js: 10
+- os: linux
+  env: KAFKA_VERSION=0.11.0.3
+  node_js: 10
+- os: linux
+  env: KAFKA_VERSION=1.1.0
+  node_js: 10
+- os: linux
+  env: KAFKA_VERSION=2.0.0
+  node_js: 10
+```
+
+More detailed document for `conf` and `topicConf` in [librdkafka](https://github.com/edenhill/librdkafka) and [node-rdkafka](https://github.com/Blizzard/node-rdkafka)
+
 ## Usage
 
 ### Install
@@ -17,14 +47,19 @@ npm i kfk -S
 ### Kafka Producer
 
 ```js
-const producer = new KafkaProducer({
+const conf = {
     'client.id': 'kafka',
     'metadata.broker.list': '127.0.0.1:9092',
     'compression.codec': 'gzip',
     'socket.keepalive.enable': true,
-  }, {}, {
-    debug: false,
-  })
+}
+const topicConf = {
+}
+const options = {
+	debug: false,
+}
+
+const producer = new KafkaProducer(conf, topicConf, options)
 
 await producer.connect()
 
@@ -44,16 +79,18 @@ while (true) {
 ### Kafka ALO(at least once) Consumer
 
 ```js
-const consumer = new KafkaALOConsumer({
+const conf = {
   'group.id': 'alo-consumer-test-1',
   'metadata.broker.list': '127.0.0.1:9092',
-  'enable.auto.offset.store': false,
-  'enable.auto.commit': false,
-}, {
-  'auto.offset.reset': 'largest',
-}, {
-    debug: false,
-  })
+}
+const topicConf = {
+	'auto.offset.reset': 'largest',
+}
+const options = {
+	debug: false,
+}
+
+const consumer = new KafkaALOConsumer(conf, topicConf, options)
 await consumer.connect()
 await consumer.subscribe([
   'rdkafka-test0',
@@ -74,16 +111,18 @@ while (true) {
 ### Kafka AMO(at most once) Consumer
 
 ```js
-const consumer = new KafkaAMOConsumer({
-  'group.id': 'alo-consumer-test-1',
+const conf = {
+  'group.id': 'amo-consumer-test-1',
   'metadata.broker.list': '127.0.0.1:9092',
-  'enable.auto.offset.store': true,
-  'enable.auto.commit': true,
-}, {
-  'auto.offset.reset': 'largest',
-}, {
-    debug: false,
-  })
+}
+const topicConf = {
+	'auto.offset.reset': 'largest',
+}
+const options = {
+	debug: false,
+}
+
+const consumer = new KafkaAMOConsumer(conf, topicConf, options)
 await consumer.connect()
 await consumer.subscribe([
   'rdkafka-test0',

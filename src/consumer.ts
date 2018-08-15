@@ -155,8 +155,6 @@ export abstract class KafkaBasicConsumer {
 }
 
 // `at least once` Consumer
-// You must guarantee that your consumer cb function will not throw any Error.
-// Otherwise, it will to been blocked on the offset where throw Error
 export class KafkaALOConsumer extends KafkaBasicConsumer {
   constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     setIfNotExist(conf, 'enable.auto.commit', false)
