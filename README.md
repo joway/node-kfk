@@ -22,7 +22,9 @@ const producer = new KafkaProducer({
     'metadata.broker.list': '127.0.0.1:9092',
     'compression.codec': 'gzip',
     'socket.keepalive.enable': true,
-  }, {})
+  }, {}, {
+    debug: false,
+  })
 
 await producer.connect()
 
@@ -49,7 +51,9 @@ const consumer = new KafkaALOConsumer({
   'enable.auto.commit': false,
 }, {
   'auto.offset.reset': 'largest',
-})
+}, {
+    debug: false,
+  })
 await consumer.connect()
 await consumer.subscribe([
   'rdkafka-test0',
@@ -77,7 +81,9 @@ const consumer = new KafkaAMOConsumer({
   'enable.auto.commit': true,
 }, {
   'auto.offset.reset': 'largest',
-})
+}, {
+    debug: false,
+  })
 await consumer.connect()
 await consumer.subscribe([
   'rdkafka-test0',
