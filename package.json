@@ -1,6 +1,6 @@
 {
   "name": "kfk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -22,7 +22,7 @@
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
     "lint": "tslint src/**/*.ts --project .",
-    "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests -v",
+    "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests -s -v",
     "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
     "pub": "npm run build && npm publish"
   },
@@ -31,21 +31,22 @@
   ],
   "author": "joway",
   "dependencies": {
-    "@types/bluebird": "3.5.20",
-    "@types/lodash": "4.14.106",
     "bluebird": "3.5.1",
     "lodash": "^4.17.5",
     "moment": "^2.22.2",
-    "node-rdkafka": "2.3.4"
+    "node-rdkafka": "2.3.4",
+    "winston": "^3.0.0"
   },
   "devDependencies": {
+    "@types/bluebird": "3.5.20",
+    "@types/lodash": "4.14.106",
     "@types/node": "^10.5.6",
     "@types/sinon": "2.3.6",
     "@types/supertest": "2.0.3",
     "ava": "0.24.0",
     "nock": "9.0.24",
     "nodemon": "1.12.1",
-    "precommit": "1.2.2",
+    "precommit": "^1.2.2",
     "sinon": "4.0.1",
     "supertest": "3.0.0",
     "tslint": "5.9.1",

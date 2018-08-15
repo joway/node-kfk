@@ -1,4 +1,5 @@
 import * as Kafka from 'node-rdkafka'
+import * as winston from 'winston'
 
 import {
   ConnectingError,
@@ -7,19 +8,31 @@ import {
   ProducerFlushError,
   ProducerRuntimeError,
 } from './errors'
+import { Options } from './types';
 
 const ErrorCode = Kafka.CODES.ERRORS
 const FLUSH_TIMEOUT = 10000 // ms
 
 export abstract class KafkaBasicProducer {
   public client: Kafka.Producer
+  protected logger: winston.Logger
+  protected debug: boolean
   protected dying: boolean
   protected flushing: boolean
 
-  constructor(conf: any, topicConf: any = {}) {
+  constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     this.dying = false
     this.flushing = false
     this.client = new Kafka.Producer(conf, topicConf)
+
+    this.debug = options.debug === undefined ? false : options.debug
+    this.logger = winston.createLogger({
+      level: this.debug ? 'debug' : 'info',
+      format: winston.format.simple(),
+      transports: [
+        new winston.transports.Console(),
+      ],
+    })
 
     this.setGracefulDeath()
   }
@@ -32,7 +45,7 @@ export abstract class KafkaBasicProducer {
         if (err) {
           reject(new DisconnectError(err.message))
         }
-        console.log('producer disconnect')
+        this.logger.info('producer disconnect')
         resolve(data)
       })
     })
@@ -75,7 +88,7 @@ export abstract class KafkaBasicProducer {
       await this.gracefulDead()
       await this.disconnect()
 
-      console.log('producer graceful died')
+      this.logger.info('producer graceful died')
       process.exit(0)
     }
     process.on('SIGINT', gracefulDeath)

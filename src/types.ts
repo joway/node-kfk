@@ -30,3 +30,7 @@ export interface KafkaMetadata {
     }[],
   }[],
 }
+
+export interface Options {
+  debug?: boolean,
+}
