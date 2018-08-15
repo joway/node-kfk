@@ -175,7 +175,9 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         this.offsetStore[topic][partition] = Math.max(curOffset, offset)
       }
     } else {
-      if (curOffset > 0) {
+      if (curOffset === undefined) {
+        this.offsetStore[topic][partition] = offset
+      } else if (curOffset > 0) {
         this.offsetStore[topic][partition] = Math.max(curOffset, offset)
       }
     }
@@ -225,7 +227,6 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
           this.logger.info(`fallback seek to topicPartition: ${topparStr}`)
         } else {
           this.consumer.commitSync(toppar)
-
           this.logger.debug(`committed topicPartition: ${topparStr}`)
         }
         delete this.offsetStore[topic][partition]
@@ -255,6 +256,9 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
         }
         if (this.debug) { this.logger.debug(`fetched ${messages.length} messages`) }
 
+        if (!cb) {
+          return resolve(messages)
+        }
         try {
           const results = await bluebird.map(
             messages,
