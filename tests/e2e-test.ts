@@ -128,16 +128,18 @@ test('alo consumer with earliest', async t => {
   consumerA.subscribe([topic])
 
   let count = 0
-  await consumerA.consume(
-    async (message: any) => {
-      count++
-      t.true(count <= TOTAL)
-    },
-    {
-      size: 100,
-      concurrency: 100,
-    },
-  )
+  await untilFetchMax(() => (
+    consumerA.consume(
+      async (message: any) => {
+        count++
+        t.true(count <= TOTAL)
+      },
+      {
+        size: 100,
+        concurrency: 100,
+      },
+    )
+  ), TOTAL)
   await consumerA.disconnect()
   t.is(count, TOTAL)
 
@@ -159,7 +161,7 @@ test('alo consumer with earliest', async t => {
   )
   consumer.subscribe([topic])
   count = 0
-  await consumer.consume(
+  await untilFetchMax(() => (consumer.consume(
     async (message: any) => {
       count++
       t.true(count <= TOTAL * 2)
@@ -168,7 +170,7 @@ test('alo consumer with earliest', async t => {
       size: 100,
       concurrency: 100,
     },
-  )
+  )), TOTAL * 2)
 
   t.is(count, TOTAL * 2)
 })
@@ -217,7 +219,7 @@ test('alo consumer with latest', async t => {
   await producer.flush()
 
   let count = 0
-  await consumer.consume(
+  await untilFetchMax(() => (consumer.consume(
     (message: any) => {
       const pos = parseInt(message.value.toString('utf-8'))
       count++
@@ -227,7 +229,7 @@ test('alo consumer with latest', async t => {
       size: 100,
       concurrency: 5,
     },
-  )
+  )), 10)
 
   t.is(count, 10)
   await producer.disconnect()
@@ -267,7 +269,7 @@ test('alo consumer with error fallback', async t => {
   const error_partition = 0
   let error_count = 0
   try {
-    await consumer.consume(
+    await untilFetchMax(async () => (consumer.consume(
       (message: any) => {
         const pos = parseInt(message.value.toString('utf-8'))
         count++
@@ -287,27 +289,29 @@ test('alo consumer with error fallback', async t => {
         size: 100,
         concurrency: 10,
       },
-    )
+    )), TOTAL)
   } catch (err) {
     t.true(err.message.includes('test error'))
   }
 
   console.log(`count ${count}, error_count ${error_count}, error_pos ${error_pos}`)
   const repetition: number[] = []
-  await consumer.consume(
-    (message: any) => {
-      const pos = parseInt(message.value.toString('utf-8'))
-      repetition.push(pos)
-      return message
-    },
-    {
-      size: 100,
-      concurrency: 100,
-    },
-    {
-      debug: true,
-    },
-  )
+  await untilFetchMax(async () => (
+    consumer.consume(
+      (message: any) => {
+        const pos = parseInt(message.value.toString('utf-8'))
+        repetition.push(pos)
+        return message
+      },
+      {
+        size: 100,
+        concurrency: 100,
+      },
+      {
+        debug: true,
+      },
+    )
+  ), error_count)
   t.true(repetition.includes(error_pos))
   t.is(repetition.length, error_count)
 
@@ -335,16 +339,18 @@ test('amo consumer with earliest', async t => {
   consumerA.subscribe([topic])
 
   let count = 0
-  await consumerA.consume(
-    async (message: any) => {
-      count++
-      t.true(count <= TOTAL)
-    },
-    {
-      size: 100,
-      concurrency: 100,
-    },
-  )
+  await untilFetchMax(async () => (
+    consumerA.consume(
+      async (message: any) => {
+        count++
+        t.true(count <= TOTAL)
+      },
+      {
+        size: 100,
+        concurrency: 100,
+      },
+    )
+  ), TOTAL)
   await consumerA.disconnect()
   t.is(count, TOTAL)
 
@@ -366,16 +372,18 @@ test('amo consumer with earliest', async t => {
   )
   consumer.subscribe([topic])
   count = 0
-  await consumer.consume(
-    async (message: any) => {
-      count++
-      t.true(count <= TOTAL * 2)
-    },
-    {
-      size: 100,
-      concurrency: 100,
-    },
-  )
+  await untilFetchMax(async () => (
+    consumer.consume(
+      async (message: any) => {
+        count++
+        t.true(count <= TOTAL * 2)
+      },
+      {
+        size: 100,
+        concurrency: 100,
+      },
+    )
+  ), TOTAL * 2)
 
   await consumer.disconnect()
   await producer.disconnect()
@@ -429,17 +437,19 @@ test('amo consumer with latest', async t => {
   await producer.flush()
 
   let count = 0
-  await consumer.consume(
-    (message: any) => {
-      const pos = parseInt(message.value.toString('utf-8'))
-      count++
-      t.true(pos > beforeCount)
-    },
-    {
-      size: 100,
-      concurrency: 5,
-    },
-  )
+  await untilFetchMax(async () => (
+    consumer.consume(
+      (message: any) => {
+        const pos = parseInt(message.value.toString('utf-8'))
+        count++
+        t.true(pos > beforeCount)
+      },
+      {
+        size: 100,
+        concurrency: 5,
+      },
+    )
+  ), 10)
 
   t.is(count, 10)
   await producer.disconnect()
