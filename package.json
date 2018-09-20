@@ -22,13 +22,10 @@
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
     "lint": "tslint src/**/*.ts --project .",
-    "test": "npm run clean && npm run compile && NODE_ENV=ci ava dist/tests -s -v",
+    "test": "NODE_ENV=ci nyc ava dist/tests -s -v && nyc report --reporter=text-lcov | coveralls",
     "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
     "pub": "npm run build && npm publish"
   },
-  "precommit": [
-    "prettier"
-  ],
   "author": "joway",
   "dependencies": {
     "bluebird": "3.5.1",
@@ -44,7 +41,9 @@
     "@types/sinon": "2.3.6",
     "@types/supertest": "2.0.3",
     "ava": "0.24.0",
+    "coveralls": "^3.0.2",
     "nodemon": "1.12.1",
+    "nyc": "^13.0.1",
     "sinon": "4.0.1",
     "supertest": "3.0.0",
     "tslint": "^5.11.0",
