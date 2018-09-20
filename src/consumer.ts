@@ -8,6 +8,7 @@ import { ConnectionDeadError } from './errors'
 
 const DEFAULT_CONSUME_SIZE = 100
 const DEFAULT_CONCURRENT = 100
+const DEFAULT_AUTO_COMMIT_INTERVAL = 1000 // ms
 const ErrorCode = Kafka.CODES.ERRORS
 
 export abstract class KafkaBasicConsumer {
@@ -20,6 +21,8 @@ export abstract class KafkaBasicConsumer {
   constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     this.dying = false
     this.topics = []
+    conf['auto.commit.interval.ms'] =
+      conf['auto.commit.interval.ms'] || DEFAULT_AUTO_COMMIT_INTERVAL
 
     if (!conf['rebalance_cb']) {
       conf['rebalance_cb'] = (err: any, assignment: any) => {
@@ -131,8 +134,6 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
   constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     conf['enable.auto.commit'] = true
     conf['enable.auto.offset.store'] = false
-    conf['auto.commit.interval.ms'] = conf['auto.commit.interval.ms'] || 1000
-
     super(conf, topicConf, options)
 
     this.legacyMessages = null
@@ -157,7 +158,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
       this.logger.debug(`fetched ${messages.length} messages`)
     }
 
-    // get topicPartitions
+    // get latest topicPartitions
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       const message = messages[i]
       const key = `${message.topic}:${message.partition}`

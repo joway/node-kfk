@@ -1,14 +1,8 @@
 import * as Kafka from 'node-rdkafka'
 import * as winston from 'winston'
 
-import {
-  ConnectingError,
-  DisconnectError,
-  ConnectionDeadError,
-  ProducerFlushError,
-  ProducerRuntimeError,
-} from './errors'
-import { Options } from './types';
+import { ConnectionDeadError } from './errors'
+import { Options } from './types'
 
 const ErrorCode = Kafka.CODES.ERRORS
 const FLUSH_TIMEOUT = 10000 // ms
@@ -29,21 +23,17 @@ export abstract class KafkaBasicProducer {
     this.logger = winston.createLogger({
       level: this.debug ? 'debug' : 'info',
       format: winston.format.simple(),
-      transports: [
-        new winston.transports.Console(),
-      ],
+      transports: [new winston.transports.Console()],
     })
 
     this.setGracefulDeath()
   }
 
-  abstract async gracefulDead(): Promise<boolean>
-
   disconnect() {
     return new Promise((resolve, reject) => {
       return this.client.disconnect((err, data) => {
         if (err) {
-          reject(new DisconnectError(err.message))
+          reject(err)
         }
         this.logger.info('producer disconnect')
         resolve(data)
@@ -60,7 +50,7 @@ export abstract class KafkaBasicProducer {
       return this.client.flush(timeout, (err: Error) => {
         this.flushing = false
         if (err) {
-          reject(new ProducerFlushError(err.message))
+          reject(err)
         }
         resolve()
       })
@@ -71,9 +61,9 @@ export abstract class KafkaBasicProducer {
     return new Promise((resolve, reject) => {
       this.client.connect(
         metadataOptions,
-        (err, data) => {
+        (err: Error, data: any) => {
           if (err) {
-            reject(new ConnectingError(err.message))
+            reject(err)
           }
           resolve(data)
         },
@@ -84,8 +74,8 @@ export abstract class KafkaBasicProducer {
   private setGracefulDeath() {
     const gracefulDeath = async () => {
       this.dying = true
+
       // cleanup
-      await this.gracefulDead()
       await this.disconnect()
 
       this.logger.info('producer graceful died')
@@ -133,7 +123,7 @@ export class KafkaProducer extends KafkaBasicProducer {
             resolve()
           })
         }
-        reject(new ProducerRuntimeError(err.message))
+        reject(err)
       }
     })
   }

@@ -4,37 +4,13 @@
 [![npm](https://img.shields.io/npm/v/kfk.svg)](https://www.npmjs.com/package/kfk)
 [![npm](https://img.shields.io/npm/dt/kfk.svg)](https://www.npmjs.com/package/kfk)
 
-The high-level node kafka client based on node-rdkafka .
+## Why I need it
 
-`KafkaALOConsumer` will monitor your consume callback function execute state and fallback to the offset when any error occur . If there are any `Error` throwed out in your consumer callback function , it will to been **blocked** on the offset where the error throw . It guarantee that all messages will been consumed at least once .
+Kafka is not friendly enough for common programers who don't have clear knowledge on it.
 
-`KafkaAMOConsumer` is a simple consumer and auto commits the offsets when fetched the messsages . It has better performance than `KafkaALOConsumer`, but not guarantee that all messages will been consumed. In `KafkaALOConsumer `, one message will be consumed at most once .
+Considering our usage are coincident at most of the time, so we want to provide a simple client for the programers who just have simple use case on kafka.
 
-Even using `KafkaAMOConsumer` , you can also take some Fault-Tolerance technology such as retry policy to ensure that message will be consumed correctly as far as possible .
-
-If your don't care little messages lose (when disaster occur), we recommend you to use `KafkaAMOConsumer` for better performance .
-
-The client Has been tested on:
-
-```yaml
-- os: linux
-  env: KAFKA_VERSION=0.10.2.2
-  node_js: 8
-- os: linux
-  env: KAFKA_VERSION=0.10.2.2
-  node_js: 10
-- os: linux
-  env: KAFKA_VERSION=0.11.0.3
-  node_js: 10
-- os: linux
-  env: KAFKA_VERSION=1.1.0
-  node_js: 10
-- os: linux
-  env: KAFKA_VERSION=2.0.0
-  node_js: 10
-```
-
-More detailed document for `conf` and `topicConf` in [librdkafka](https://github.com/edenhill/librdkafka) and [node-rdkafka](https://github.com/Blizzard/node-rdkafka)
+`node-kfk` is a **real** high-level client based on [node-rdkafka](https://github.com/Blizzard/node-rdkafka). If you want control your consumer more deeply, node-rdkafka may be your right choice.
 
 ## Usage
 
@@ -50,8 +26,6 @@ npm i kfk -S
 const conf = {
   'client.id': 'kafka',
   'metadata.broker.list': '127.0.0.1:9092',
-  'compression.codec': 'gzip',
-  'socket.keepalive.enable': true,
 }
 const topicConf = {
 }
@@ -139,3 +113,54 @@ while (true) {
     })
 }
 ```
+
+## Explain
+
+Kafka is easy to use for producer. But when it comes to consumer, the usage can be very differently, which exactly depends on your use case.
+
+### Choose your right consumer
+
+`node-kfk` provide two consumer choices for you : `KafkaALOConsumer` and `KafkaAMOConsumer`. `ALO` means `At Least Once`, and `AMO` means `At Most Once`.
+
+#### At Least Once
+
+If you cannot tolerate any message loss and you has handled the repetitive execution situation in your consumer function, you may want your cunsumer has `at least once` guarantee.
+
+`KafkaALOConsumer` will monitor your consume callback function execute state and if there are any `Error` throwed in your consumer callback function (or process crashed), it will begin at the offsets you last consumed success.
+
+#### At Most Once
+
+If you are not very care about little messages loss when problem happen, but you want make sure that every message only can be handled on time, you can just use the `KafkaAMOConsumer`.
+
+`KafkaAMOConsumer` will auto commits the offsets when fetched the messsages . It has better performance than `KafkaALOConsumer`, but not guarantee that all messages will been consumed.
+
+### Offset Management Detail
+
+In `KafkaAMOConsumer`, `node-kfk` use the `enable.auto.commit=true` and `enable.auto.offset.store=true` options which completely depend on librdkafka to management the offsets and will auto commit the latest offsets periodically(the interval depends on `auto.commit.interval.ms`, default is `1000`).
+
+In `KafkaALOConsumer`, we still want librdkafka do the auto commit job, but we need to control offsetStore manually. When `node-kfk` ensure that all messages has been handled success, it will store the latest offsets in offsetStore, and wait for commited by librdkafka.
+
+### Others
+
+The client Has been tested on:
+
+```yaml
+- os: linux
+  env: KAFKA_VERSION=0.10.2.2
+  node_js: 8
+- os: linux
+  env: KAFKA_VERSION=0.10.2.2
+  node_js: 10
+- os: linux
+  env: KAFKA_VERSION=0.11.0.3
+  node_js: 10
+- os: linux
+  env: KAFKA_VERSION=1.1.0
+  node_js: 10
+- os: linux
+  env: KAFKA_VERSION=2.0.0
+  node_js: 10
+```
+
+More detailed document for `conf` and `topicConf` in [librdkafka](https://github.com/edenhill/librdkafka) and [node-rdkafka](https://github.com/Blizzard/node-rdkafka)
+
