@@ -126,7 +126,7 @@ Kafka is easy to use for the producer. But when it comes to the consumer, the us
 
 If you cannot tolerate any message loss and you have handled the repetitive execution situation in your consumer function, you may want your consumer has `at least once` guarantee.
 
-`KafkaALOConsumer` will monitor your consume callback function execute state and if there are any `Error` thrown in your consumer callback function (or process crashed), it will begin at the offsets you last consumed success.
+`KafkaALOConsumer` will monitor your consume callback function execute state and if there are any `Error` thrown in your consumer callback function (or process crashed), it will begin at the offsets you last consumed successfully.
 
 #### At Most Once
 
@@ -138,7 +138,7 @@ If you do not very care about little messages loss when problem happens, but you
 
 In `KafkaAMOConsumer`, `node-kfk` use the `enable.auto.commit=true` and `enable.auto.offset.store=true` options which completely depend on librdkafka to management the offsets and will auto commit the latest offsets periodically(the interval depends on `auto.commit.interval.ms`, default is `1000`).
 
-In `KafkaALOConsumer`, we still want librdkafka to commit automatically, but we need to control offsetStore manually. When `node-kfk` ensure that all messages had been handled success, it will store the latest offsets in offsetStore, and wait for committed by librdkafka.
+In `KafkaALOConsumer`, we still want librdkafka to commit automatically, but we need to control offsetStore manually. When `node-kfk` ensure that all messages had been handled successfully, it will store the latest offsets in offsetStore, and wait for committed by librdkafka.
 
 ### Others
 
