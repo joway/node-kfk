@@ -178,7 +178,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     try {
       const results = await bluebird.map(
         messages,
-        async message => {
+        async (message: KafkaMessage) => {
           const ret = await bluebird.resolve(cb(message))
           return ret
         },
@@ -225,7 +225,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
         return bluebird
           .map(
             messages,
-            async message => {
+            async (message: KafkaMessage) => {
               return await Promise.resolve(cb(message))
             },
             { concurrency: options.concurrency! },
