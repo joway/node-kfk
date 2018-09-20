@@ -1,0 +1,13 @@
+[run]
+omit =
+    */src*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    reject(err)
+    reject(e)
+    return reject(err)
+    return reject(e)
+
+ignore_errors = True
