@@ -151,7 +151,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
       throw new ConnectionDeadError('Connection has been dead or is dying')
     }
 
-    const messages = this.legacyMessages || await this.fetch(options.size!)
+    const messages = this.legacyMessages || (await this.fetch(options.size!))
 
     if (this.debug) {
       this.logger.debug(`fetched ${messages.length} messages`)
@@ -178,7 +178,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     try {
       const results = await bluebird.map(
         messages,
-        async (message) => {
+        async message => {
           const ret = await bluebird.resolve(cb(message))
           return ret
         },
