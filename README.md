@@ -1,5 +1,6 @@
 # Node-Kfk
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/51840be97e8d47d38fddb09cd95099ad)](https://app.codacy.com/app/joway/node-kfk?utm_source=github.com&utm_medium=referral&utm_content=joway/node-kfk&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/joway/node-kfk.svg?branch=master)](https://travis-ci.org/joway/node-kfk)
 [![npm](https://img.shields.io/npm/v/kfk.svg)](https://www.npmjs.com/package/kfk)
 [![npm](https://img.shields.io/npm/dt/kfk.svg)](https://www.npmjs.com/package/kfk)
