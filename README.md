@@ -6,11 +6,11 @@
 
 ## Why I need it
 
-Kafka is not friendly enough for common programers who don't have clear knowledge on it.
+Kafka is not friendly enough for common programmers who don't have clear knowledge on it.
 
-Considering our usage are coincident at most of the time, so we want to provide a simple client for the programers who just have simple use case on kafka.
+Considering our usage are coincident at most of the time, so we want to provide a simple client for the programmers who just have simple use case on kafka.
 
-`node-kfk` is a **real** high-level client based on [node-rdkafka](https://github.com/Blizzard/node-rdkafka). If you want control your consumer more deeply, node-rdkafka may be your right choice.
+`node-kfk` is a **real** high-level client based on [node-rdkafka](https://github.com/Blizzard/node-rdkafka). If you want to control your consumer more deeply, node-rdkafka may be your right choice.
 
 ## Usage
 
@@ -116,29 +116,29 @@ while (true) {
 
 ## Explain
 
-Kafka is easy to use for producer. But when it comes to consumer, the usage can be very differently, which exactly depends on your use case.
+Kafka is easy to use for the producer. But when it comes to the consumer, the usage can be very different, which exactly depends on your use case.
 
 ### Choose your right consumer
 
-`node-kfk` provide two consumer choices for you : `KafkaALOConsumer` and `KafkaAMOConsumer`. `ALO` means `At Least Once`, and `AMO` means `At Most Once`.
+`node-kfk` provide two consumer choices for you: `KafkaALOConsumer` and `KafkaAMOConsumer`. `ALO` means `At Least Once`, and `AMO` means `At Most Once`.
 
 #### At Least Once
 
-If you cannot tolerate any message loss and you has handled the repetitive execution situation in your consumer function, you may want your cunsumer has `at least once` guarantee.
+If you cannot tolerate any message loss and you have handled the repetitive execution situation in your consumer function, you may want your consumer has `at least once` guarantee.
 
-`KafkaALOConsumer` will monitor your consume callback function execute state and if there are any `Error` throwed in your consumer callback function (or process crashed), it will begin at the offsets you last consumed success.
+`KafkaALOConsumer` will monitor your consume callback function execute state and if there are any `Error` thrown in your consumer callback function (or process crashed), it will begin at the offsets you last consumed success.
 
 #### At Most Once
 
-If you are not very care about little messages loss when problem happen, but you want make sure that every message only can be handled on time, you can just use the `KafkaAMOConsumer`.
+If you do not very care about little messages loss when problem happens, but you want to make sure that every message only can be handled on time, you can just use the `KafkaAMOConsumer`.
 
-`KafkaAMOConsumer` will auto commits the offsets when fetched the messsages . It has better performance than `KafkaALOConsumer`, but not guarantee that all messages will been consumed.
+`KafkaAMOConsumer` will auto commits the offsets when fetched the messages. It has better performance than `KafkaALOConsumer`, but not guarantee that all messages will be consumed.
 
 ### Offset Management Detail
 
 In `KafkaAMOConsumer`, `node-kfk` use the `enable.auto.commit=true` and `enable.auto.offset.store=true` options which completely depend on librdkafka to management the offsets and will auto commit the latest offsets periodically(the interval depends on `auto.commit.interval.ms`, default is `1000`).
 
-In `KafkaALOConsumer`, we still want librdkafka do the auto commit job, but we need to control offsetStore manually. When `node-kfk` ensure that all messages has been handled success, it will store the latest offsets in offsetStore, and wait for commited by librdkafka.
+In `KafkaALOConsumer`, we still want librdkafka to commit automatically, but we need to control offsetStore manually. When `node-kfk` ensure that all messages had been handled success, it will store the latest offsets in offsetStore, and wait for committed by librdkafka.
 
 ### Others
 
@@ -162,5 +162,4 @@ The client Has been tested on:
   node_js: 10
 ```
 
-More detailed document for `conf` and `topicConf` in [librdkafka](https://github.com/edenhill/librdkafka) and [node-rdkafka](https://github.com/Blizzard/node-rdkafka)
-
+More detailed document for `conf` and `topicConf` params in [librdkafka](https://github.com/edenhill/librdkafka) and [node-rdkafka](https://github.com/Blizzard/node-rdkafka)

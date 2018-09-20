@@ -46,5 +46,5 @@ install:
 before_script:
   - npm run build
 script:
-  - NODE_ENV=ci ava dist/tests -v -s
   - npm run lint
+  - NODE_ENV=ci ava dist/tests -v -s
