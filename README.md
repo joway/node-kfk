@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/joway/node-kfk.svg?branch=master)](https://travis-ci.org/joway/node-kfk)
 [![npm](https://img.shields.io/npm/v/kfk.svg)](https://www.npmjs.com/package/kfk)
 [![npm](https://img.shields.io/npm/dt/kfk.svg)](https://www.npmjs.com/package/kfk)
+[![Coverage Status](https://coveralls.io/repos/github/joway/node-kfk/badge.svg?branch=test-coverage)](https://coveralls.io/github/joway/node-kfk?branch=test-coverage)
 
 ## Why I need it
 
@@ -139,11 +140,11 @@ If you do not very care about little messages loss when problem happens, but you
 
 In `KafkaAMOConsumer`, `node-kfk` use the `enable.auto.commit=true` and `enable.auto.offset.store=true` options which completely depend on librdkafka to management the offsets and will auto commit the latest offsets periodically(the interval depends on `auto.commit.interval.ms`, default is `1000`).
 
-In `KafkaALOConsumer`, we still want librdkafka to commit automatically, but we need to control offsetStore manually. When `node-kfk` ensure that all messages had been handled successfully, it will store the latest offsets in offsetStore, and wait for committed by librdkafka.
+In `KafkaALOConsumer`, we still want librdkafka to commit automatically, but we need to control offsetStore manually(now we set `enable.auto.commit=true` and `enable.auto.offset.store=false`). When `node-kfk` ensure that all messages had been handled successfully, it will store the latest offsets in offsetStore, and wait for committed by librdkafka.
 
 ### Others
 
-The client Has been tested on:
+The client has been tested on:
 
 ```yaml
 - os: linux
