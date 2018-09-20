@@ -1,11 +1,8 @@
 {
   "extends": "tslint-config-airbnb",
   "rules": {
-    "variable-name": [
-      true,
-      "check-format",
-      "allow-pascal-case"
-    ],
-    "semicolon": false
+    "variable-name": [true, "check-format", "allow-pascal-case"],
+    "semicolon": false,
+    "trailing-comma": false
   }
 }
