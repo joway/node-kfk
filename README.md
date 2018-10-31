@@ -6,13 +6,11 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/51840be97e8d47d38fddb09cd95099ad)](https://app.codacy.com/app/joway/node-kfk?utm_source=github.com&utm_medium=referral&utm_content=joway/node-kfk&utm_campaign=Badge_Grade_Dashboard)
 [![Coverage Status](https://coveralls.io/repos/github/joway/node-kfk/badge.svg?branch=test-coverage)](https://coveralls.io/github/joway/node-kfk?branch=test-coverage)
 
-## Why you need it
+## Why I need it
 
-Kafka is not friendly enough for programmers who don't have clear knowledge on it.
+Kafka is not friendly enough for programmers who don't have a clear knowledge on it.
 
-Considering our usage are coincident at most of the time, so we want to provide a simple client for simple use case on kafka.
-
-`node-kfk` is a **real** high-level client based on [node-rdkafka](https://github.com/Blizzard/node-rdkafka). If you want to control your consumer more deeply, node-rdkafka may be your right choice.
+Considering our usage are similar at most of the time, we want to provide a simple client for simple use case on kafka.
 
 ## Usage
 
