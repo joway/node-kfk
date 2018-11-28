@@ -20,7 +20,7 @@ matrix:
     - os: linux
       dist: trusty
       sudo: false
-      env: KAFKA_VERSION=1.1.0
+      env: KAFKA_VERSION=1.1.1
       node_js: 10
     - os: linux
       dist: trusty
