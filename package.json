@@ -31,12 +31,12 @@
     "bluebird": "3.5.1",
     "lodash": "4.17.11",
     "moment": "2.22.2",
-    "node-rdkafka": "2.4.1",
+    "node-rdkafka": "2.4.2",
     "winston": "^3.1.0"
   },
   "devDependencies": {
     "@types/bluebird": "3.5.20",
-    "@types/lodash": "4.14.106",
+    "@types/lodash": "4.14.118",
     "@types/node": "^10.10.1",
     "@types/sinon": "2.3.6",
     "@types/supertest": "2.0.3",
