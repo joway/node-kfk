@@ -28,7 +28,7 @@
   },
   "author": "joway",
   "dependencies": {
-    "bluebird": "3.5.1",
+    "bluebird": "3.5.3",
     "lodash": "4.17.11",
     "moment": "2.22.2",
     "node-rdkafka": "2.4.2",
