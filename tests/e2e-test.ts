@@ -590,6 +590,8 @@ test('amo consumer with error fallback', async t => {
   } catch (err) {
     t.true(err.message.includes('test error'))
   }
+  await consumer.disconnect()
+  await consumer.connect()
 
   const repetition: number[] = []
   await consumer.consume(
