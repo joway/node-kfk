@@ -28,7 +28,7 @@
   },
   "author": "joway",
   "dependencies": {
-    "bluebird": "3.5.1",
+    "bluebird": "3.5.3",
     "lodash": "4.17.11",
     "moment": "2.22.2",
     "node-rdkafka": "2.4.2",
@@ -38,7 +38,7 @@
     "@types/bluebird": "3.5.24",
     "@types/lodash": "4.14.118",
     "@types/node": "^10.10.1",
-    "@types/sinon": "2.3.6",
+    "@types/sinon": "5.0.7",
     "@types/supertest": "2.0.3",
     "ava": "0.25.0",
     "coveralls": "^3.0.2",
@@ -48,6 +48,6 @@
     "supertest": "3.3.0",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",
-    "typescript": "3.1.6"
+    "typescript": "3.2.1"
   }
 }
