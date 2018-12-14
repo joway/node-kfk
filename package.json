@@ -30,7 +30,7 @@
   "dependencies": {
     "bluebird": "3.5.3",
     "lodash": "4.17.11",
-    "moment": "2.22.2",
+    "moment": "2.23.0",
     "node-rdkafka": "2.5.0",
     "winston": "^3.1.0"
   },
