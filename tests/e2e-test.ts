@@ -130,7 +130,6 @@ test('produce and die', async t => {
     isError = true
   }
   t.is(isError, true)
-  await producer.disconnect()
 })
 
 test('alo consumer with earliest', async t => {
@@ -318,7 +317,6 @@ test('alo consumer and die', async t => {
   t.is(isError, true)
 
   await producer.disconnect()
-  await consumer.disconnect()
 })
 
 test('alo consumer with no commit when error', async t => {

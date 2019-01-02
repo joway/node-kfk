@@ -83,7 +83,7 @@ export abstract class KafkaBasicConsumer {
 
   async die() {
     this.dying = true
-    
+
     // empty topics and unsubscribe them
     this.unsubscribe()
     // disconnect from brokers
