@@ -12,10 +12,12 @@ export abstract class KafkaBasicProducer {
   protected logger: winston.Logger
   protected debug: boolean
   protected dying: boolean
+  protected dead: boolean
   protected flushing: boolean
 
   constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     this.dying = false
+    this.dead = false
     this.flushing = false
     this.client = new Kafka.Producer(conf, topicConf)
 
@@ -25,13 +27,11 @@ export abstract class KafkaBasicProducer {
       format: winston.format.simple(),
       transports: [new winston.transports.Console()],
     })
-
-    this.setGracefulDeath()
   }
 
   disconnect() {
     return new Promise((resolve, reject) => {
-      return this.client.disconnect((err, data) => {
+      return this.client.disconnect((err: Error, data: any) => {
         if (err) {
           reject(err)
         }
@@ -71,19 +71,11 @@ export abstract class KafkaBasicProducer {
     })
   }
 
-  private setGracefulDeath() {
-    const gracefulDeath = async () => {
-      this.dying = true
-
-      // cleanup
-      await this.disconnect()
-
-      this.logger.info('producer graceful died')
-      process.exit(0)
-    }
-    process.on('SIGINT', gracefulDeath)
-    process.on('SIGQUIT', gracefulDeath)
-    process.on('SIGTERM', gracefulDeath)
+  async die() {
+    this.dying = true
+    await this.disconnect()
+    this.dead = true
+    this.logger.info('producer graceful died')
   }
 }
 
@@ -102,7 +94,7 @@ export class KafkaProducer extends KafkaBasicProducer {
     opaque?: string,
   ) {
     return new Promise((resolve, reject) => {
-      if (this.dying) {
+      if (this.dying || this.dead) {
         reject(new ConnectionDeadError('Connection has been dead or is dying'))
       }
       try {

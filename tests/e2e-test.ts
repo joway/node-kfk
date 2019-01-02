@@ -34,7 +34,7 @@ async function untilFetchMax<T>(handler: Function, maxCount: number) {
   return results
 }
 
-async function setUpProducer(topic: string, mesCount: number = 100) {
+async function setUpProducer(topic: string, msgCount: number = 100) {
   const producer = new KafkaProducer(
     {
       'client.id': `client-id-test`,
@@ -45,7 +45,7 @@ async function setUpProducer(topic: string, mesCount: number = 100) {
     { debug: false },
   )
   await producer.connect()
-  for (let i = 0; i < mesCount; i++) {
+  for (let i = 0; i < msgCount; i++) {
     const msg = `${new Date().getTime()}-${crypto.randomBytes(20).toString('hex')}`
     await producer.produce(topic, null, msg)
   }
@@ -111,6 +111,26 @@ test('produce', async t => {
 
   await producer.disconnect()
   await consumer.disconnect()
+})
+
+test('produce and die', async t => {
+  const seed = random(12)
+  const topic = `topic-produce-${seed}`
+  const group = `group-produce-${seed}`
+  console.log('topic', topic, 'group', group)
+  const TOTAL = 10
+  const producer = await setUpProducer(topic, TOTAL)
+  await producer.flush()
+
+  await producer.die()
+  let isError = false
+  try {
+    await producer.produce(topic, null, 'test')
+  } catch (err) {
+    isError = true
+  }
+  t.is(isError, true)
+  await producer.disconnect()
 })
 
 test('alo consumer with earliest', async t => {
@@ -252,6 +272,51 @@ test('alo consumer with latest', async t => {
     10,
   )
   t.is(count, 10)
+  await producer.disconnect()
+  await consumer.disconnect()
+})
+
+test('alo consumer and die', async t => {
+  const seed = random(12)
+  const topic = `topic-produce-${seed}`
+  const group = `group-produce-${seed}`
+  console.log('topic', topic, 'group', group)
+  let beforeCount = 0
+  const producer = await setUpProducer(topic, 0)
+  for (let i = 0; i < 10; i++) {
+    const msg = `${i}`
+    beforeCount++
+    await producer.produce(topic, null, msg)
+  }
+  await producer.flush()
+
+  const consumer = await setUpConsumer(
+    KafkaALOConsumer,
+    {
+      'group.id': group,
+    },
+    {
+      'auto.offset.reset': 'latest',
+    },
+  )
+  consumer.subscribe([topic])
+
+  await consumer.die()
+  let isError = false
+  try {
+    await consumer.consume(
+      (message: any) => {
+        console.log(message)
+      },
+      {
+        size: 1,
+      },
+    )
+  } catch (err) {
+    isError = true
+  }
+  t.is(isError, true)
+
   await producer.disconnect()
   await consumer.disconnect()
 })
