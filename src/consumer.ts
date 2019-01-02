@@ -16,10 +16,12 @@ export abstract class KafkaBasicConsumer {
   protected logger: winston.Logger
   protected debug: boolean
   protected dying: boolean
+  protected dead: boolean
   protected topics: string[]
 
   constructor(conf: any, topicConf: any = {}, options: Options = {}) {
     this.dying = false
+    this.dead = false
     this.topics = []
     conf['auto.commit.interval.ms'] =
       conf['auto.commit.interval.ms'] || DEFAULT_AUTO_COMMIT_INTERVAL
@@ -50,8 +52,6 @@ export abstract class KafkaBasicConsumer {
       transports: [new winston.transports.Console()],
     })
     this.logger.debug(`debug mode : ${this.debug}`)
-
-    this.setGracefulDeath()
   }
 
   disconnect() {
@@ -81,19 +81,16 @@ export abstract class KafkaBasicConsumer {
     })
   }
 
-  private setGracefulDeath() {
-    const gracefulDeath = async () => {
-      this.dying = true
+  async die() {
+    this.dying = true
 
-      this.unsubscribe()
-      await this.disconnect()
+    // empty topics and unsubscribe them
+    this.unsubscribe()
+    // disconnect from brokers
+    await this.disconnect()
 
-      this.logger.info('consumer graceful died')
-      process.exit(0)
-    }
-    process.on('SIGINT', gracefulDeath)
-    process.on('SIGQUIT', gracefulDeath)
-    process.on('SIGTERM', gracefulDeath)
+    this.dead = true
+    this.logger.info('consumer died')
   }
 
   async subscribe(topics: string[]) {
@@ -148,7 +145,7 @@ export class KafkaALOConsumer extends KafkaBasicConsumer {
     options.concurrency = options.concurrency || DEFAULT_CONCURRENT
     const topicPartitionMap: { [key: string]: TopicPartition } = {}
 
-    if (this.dying) {
+    if (this.dying || this.dead) {
       throw new ConnectionDeadError('Connection has been dead or is dying')
     }
 
@@ -216,7 +213,7 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
     return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
       return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
-        if (this.dying) {
+        if (this.dying || this.dead) {
           reject(new ConnectionDeadError('Connection has been dead or is dying'))
         }
         if (err) {
