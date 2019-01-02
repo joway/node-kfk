@@ -114,9 +114,20 @@ while (true) {
 }
 ```
 
-## Explain
+### Graceful Death
 
-Kafka is easy to use for the producer. But when it comes to the consumer, the usage can be very different, which exactly depends on your use case.
+```ts
+const gracefulDeath = async () => {
+  await producer.die()
+  await consumer.die()
+  process.exit(0)
+}
+process.on('SIGINT', gracefulDeath)
+process.on('SIGQUIT', gracefulDeath)
+process.on('SIGTERM', gracefulDeath)
+```
+
+## Deep Dive
 
 ### Choose your right consumer
 
