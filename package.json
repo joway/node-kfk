@@ -17,14 +17,14 @@
     "high-level"
   ],
   "scripts": {
+    "prepublishOnly": "npm run build",
     "compile": "tsc",
     "clean": "rm -rf dist",
     "purge": "rm -rf package-lock.json node_modules && npm run clean",
     "build": "npm run clean && npm run compile",
     "lint": "tslint src/**/*.ts --project .",
     "test": "NODE_ENV=ci nyc ava dist/tests -s -v && nyc report --reporter=text-lcov | coveralls",
-    "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'",
-    "pub": "npm run build && npm publish"
+    "prettier": "prettier --config ./.prettierrc --write '{src,tests}/**/*.ts'"
   },
   "author": "joway",
   "dependencies": {
