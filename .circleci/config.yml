@@ -43,15 +43,19 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm run test
+      - run: "[[ $COVERALLS == true ]] && npm run report || true"
   kafka-1.1.1:
     <<: *test-template
     environment:
       KAFKA_VERSION: 1.1.1
+      COVERALLS: "false"
   kafka-0.11.0.3:
     <<: *test-template
     environment:
       KAFKA_VERSION: 0.11.0.3
+      COVERALLS: "false"
   kafka-0.10.2.2:
     <<: *test-template
     environment:
       KAFKA_VERSION: 0.10.2.2
+      COVERALLS: "false"
