@@ -22,6 +22,9 @@ jobs:
       - run:
           name: install kafka
           command: |
+            sudo apt update
+            sudo apt install default-jre
+            java -version
             wget "http://www.us.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_2.11-${KAFKA_VERSION}.tgz" -O kafka.tgz
             mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
             echo -e "\nauto.create.topics.enable=true" >> ./kafka/config/server.properties
@@ -44,10 +47,10 @@ jobs:
     <<: *test-template
     environment:
       KAFKA_VERSION: 1.1.1
-  kafka-kafka-0.11.0.3:
+  kafka-0.11.0.3:
     <<: *test-template
     environment:
-      KAFKA_VERSION: kafka-0.11.0.3
+      KAFKA_VERSION: 0.11.0.3
   kafka-0.10.2.2:
     <<: *test-template
     environment:
