@@ -1,0 +1,54 @@
+version: 2
+workflows:
+  version: 2
+  test:
+    jobs:
+      - kafka-2.0.0
+      - kafka-1.1.1
+      - kafka-0.11.0.3
+      - kafka-0.10.2.2
+jobs:
+  kafka-2.0.0: &test-template
+    docker:
+      - image: circleci/node:10
+    working_directory: ~/repo
+    environment:
+      KAFKA_VERSION: 2.0.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+      - run:
+          name: install kafka
+          command: |
+            wget "http://www.us.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_2.11-${KAFKA_VERSION}.tgz" -O kafka.tgz
+            mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
+            echo -e "\nauto.create.topics.enable=true" >> ./kafka/config/server.properties
+            echo -e "\nnum.partitions=3" >> ./kafka/config/server.properties
+            cat ./kafka/config/zookeeper.properties
+            cat ./kafka/config/server.properties
+            nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties > /dev/null 2>&1 &"
+            nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties > /dev/null 2>&1 &"
+            sleep 10
+            cat ./kafka/logs/server.log
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run test
+  kafka-1.1.1:
+    <<: *test-template
+    environment:
+      KAFKA_VERSION: 1.1.1
+  kafka-kafka-0.11.0.3:
+    <<: *test-template
+    environment:
+      KAFKA_VERSION: kafka-0.11.0.3
+  kafka-0.10.2.2:
+    <<: *test-template
+    environment:
+      KAFKA_VERSION: 0.10.2.2
