@@ -41,7 +41,7 @@
     "@types/node": "^10.10.1",
     "@types/sinon": "7.0.3",
     "@types/supertest": "2.0.7",
-    "ava": "1.0.1",
+    "ava": "1.1.0",
     "coveralls": "^3.0.2",
     "nodemon": "1.18.9",
     "nyc": "^13.0.1",
