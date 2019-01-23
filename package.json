@@ -46,7 +46,7 @@
     "nodemon": "1.18.9",
     "nyc": "^13.0.1",
     "sinon": "7.2.3",
-    "supertest": "3.4.1",
+    "supertest": "3.4.2",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",
     "typescript": "3.2.4"
