@@ -45,7 +45,7 @@
     "coveralls": "^3.0.2",
     "nodemon": "1.18.10",
     "nyc": "^13.0.1",
-    "sinon": "7.3.0",
+    "sinon": "7.4.1",
     "supertest": "4.0.2",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",
