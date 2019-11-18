@@ -38,7 +38,7 @@
     "winston": "^3.1.0"
   },
   "devDependencies": {
-    "@types/bluebird": "3.5.26",
+    "@types/bluebird": "3.5.29",
     "@types/lodash": "4.14.123",
     "@types/node": "^11.9.2",
     "@types/sinon": "7.0.10",
