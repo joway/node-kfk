@@ -46,7 +46,7 @@
     "ava": "1.4.0",
     "coveralls": "^3.0.2",
     "node-rdkafka": "^2.7.4",
-    "nodemon": "2.0.1",
+    "nodemon": "2.0.2",
     "nyc": "^14.1.1",
     "sinon": "7.5.0",
     "supertest": "4.0.2",
