@@ -41,7 +41,7 @@
     "@types/bluebird": "3.5.29",
     "@types/lodash": "4.14.149",
     "@types/node": "^12.12.9",
-    "@types/sinon": "7.5.1",
+    "@types/sinon": "7.5.2",
     "@types/supertest": "2.0.8",
     "ava": "1.4.0",
     "coveralls": "^3.0.2",
