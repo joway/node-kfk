@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/bluebird": "3.5.30",
     "@types/lodash": "4.14.150",
-    "@types/node": "^12.12.9",
+    "@types/node": "^13.13.1",
     "@types/sinon": "9.0.0",
     "@types/supertest": "2.0.8",
     "ava": "1.4.0",
