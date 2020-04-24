@@ -47,7 +47,7 @@ export abstract class KafkaBasicProducer {
     }
     this.flushing = true
     return new Promise((resolve, reject) => {
-      return this.client.flush(timeout, (err: Error) => {
+      return this.client.flush(timeout, (err: Kafka.LibrdKafkaError) => {
         this.flushing = false
         if (err) {
           reject(err)
@@ -59,15 +59,12 @@ export abstract class KafkaBasicProducer {
 
   connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
-      this.client.connect(
-        metadataOptions,
-        (err: Error, data: any) => {
-          if (err) {
-            reject(err)
-          }
-          resolve(data)
-        },
-      )
+      this.client.connect(metadataOptions, (err: Kafka.LibrdKafkaError, data: any) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(data)
+      })
     })
   }
 
@@ -90,7 +87,7 @@ export class KafkaProducer extends KafkaBasicProducer {
     partition: number | null,
     message: string,
     key?: string,
-    timestamp?: string,
+    timestamp?: number,
     opaque?: string,
   ) {
     return new Promise((resolve, reject) => {
