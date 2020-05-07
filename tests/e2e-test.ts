@@ -1,23 +1,13 @@
 /* tslint:disable */
 import test from 'ava'
-import * as bluebird from 'bluebird'
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
-import * as sinon from 'sinon'
 
 import { KafkaProducer } from '../src/producer'
 import { KafkaALOConsumer, KafkaAMOConsumer } from '../src/consumer'
 import { TopicPartition } from '../src/types'
 
 const BROKERS = '127.0.0.1:9092'
-
-// test.beforeEach(t => {
-//   t.context.sandbox = sinon.sandbox.create()
-// })
-
-// test.afterEach.always(t => {
-//   t.context.sandbox.restore()
-// })
 
 function random(len: number) {
   const possible = 'abcdefghijklmnopqrstuvwxyz'
@@ -70,7 +60,7 @@ async function setUpConsumer(ConsumerType: any, conf: any, topicConf: any = {}, 
   return consumer
 }
 
-test('produce', async t => {
+test('produce', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -113,7 +103,7 @@ test('produce', async t => {
   await consumer.disconnect()
 })
 
-test('produce and die', async t => {
+test('produce and die', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -132,7 +122,7 @@ test('produce and die', async t => {
   t.is(isError, true)
 })
 
-test('alo consumer with earliest', async t => {
+test('alo consumer with earliest', async (t) => {
   const seed = random(12)
   const topic = `topic-alo-${seed}`
   const group = `group-alo-${seed}`
@@ -211,7 +201,7 @@ test('alo consumer with earliest', async t => {
   t.is(news.length, 0)
 })
 
-test('alo consumer with latest', async t => {
+test('alo consumer with latest', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -275,7 +265,7 @@ test('alo consumer with latest', async t => {
   await consumer.disconnect()
 })
 
-test('alo consumer and die', async t => {
+test('alo consumer and die', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -319,7 +309,7 @@ test('alo consumer and die', async t => {
   await producer.disconnect()
 })
 
-test('alo consumer with no commit when error', async t => {
+test('alo consumer with no commit when error', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -336,7 +326,7 @@ test('alo consumer with no commit when error', async t => {
     KafkaALOConsumer,
     {
       'group.id': group,
-      offset_commit_cb: function(err: Error, topicPartitions: TopicPartition[]) {
+      offset_commit_cb: function (err: Error, topicPartitions: TopicPartition[]) {
         t.true(false)
       },
     },
@@ -380,7 +370,7 @@ test('alo consumer with no commit when error', async t => {
   await consumer.disconnect()
 })
 
-test('alo consumer with error fallback', async t => {
+test('alo consumer with error fallback', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -460,7 +450,7 @@ test('alo consumer with error fallback', async t => {
   await consumer.disconnect()
 })
 
-test('amo consumer with earliest', async t => {
+test('amo consumer with earliest', async (t) => {
   const seed = random(12)
   const topic = `topic-alo-${seed}`
   const group = `group-alo-${seed}`
@@ -535,7 +525,7 @@ test('amo consumer with earliest', async t => {
   t.is(count, TOTAL * 2)
 })
 
-test('amo consumer with latest', async t => {
+test('amo consumer with latest', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -604,7 +594,7 @@ test('amo consumer with latest', async t => {
   await consumer.disconnect()
 })
 
-test('amo consumer with error fallback', async t => {
+test('amo consumer with error fallback', async (t) => {
   const seed = random(12)
   const topic = `topic-produce-${seed}`
   const group = `group-produce-${seed}`
@@ -617,6 +607,7 @@ test('amo consumer with error fallback', async t => {
   }
   await producer.flush()
 
+  console.log('producer flushed')
   const consumer = await setUpConsumer(
     KafkaAMOConsumer,
     {
@@ -630,6 +621,7 @@ test('amo consumer with error fallback', async t => {
     },
   )
   consumer.subscribe([topic])
+  console.log('consumer setuped')
 
   let count = 0
   let error_pos: number = -1
@@ -654,6 +646,7 @@ test('amo consumer with error fallback', async t => {
     t.true(err.message.includes('test error'))
   }
   await consumer.disconnect()
+  console.log('test error success')
   await consumer.connect()
 
   const repetition: number[] = []
@@ -668,6 +661,7 @@ test('amo consumer with error fallback', async t => {
     },
   )
   t.is(repetition.length, 0)
+  console.log('repetition check success')
 
   await producer.disconnect()
   await consumer.disconnect()
