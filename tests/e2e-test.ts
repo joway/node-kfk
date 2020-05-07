@@ -632,10 +632,10 @@ test('amo consumer with error fallback', async (t) => {
         const pos = parseInt(message.value.toString('utf-8'))
         count++
         t.true(count <= TOTAL)
-        // if (error_pos < 0 && message.partition === error_partition) {
-        //   error_pos = pos
-        //   throw Error(`test error ${pos}`)
-        // }
+        if (error_pos < 0 && message.partition === error_partition) {
+          error_pos = pos
+          throw Error(`test error ${pos}`)
+        }
       },
       {
         size: TOTAL,

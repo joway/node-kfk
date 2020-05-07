@@ -218,16 +218,19 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
           if (err) {
             reject(err)
           }
-
-          return bluebird
-            .map(
+          try {
+            const results = await bluebird.map(
               messages,
               async (message: KafkaMessage) => {
                 return await Promise.resolve(cb(message))
               },
               { concurrency: options.concurrency! },
             )
-            .then((results: any[]) => resolve(results))
+
+            resolve(results)
+          } catch (err) {
+            reject(err)
+          }
         },
       )
     })
