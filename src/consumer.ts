@@ -56,7 +56,7 @@ export abstract class KafkaBasicConsumer {
 
   disconnect() {
     return new Promise((resolve, reject) => {
-      return this.consumer.disconnect((err: Error, data: any) => {
+      return this.consumer.disconnect((err: Kafka.LibrdKafkaError, data: any) => {
         if (err) {
           reject(err)
         }
@@ -68,16 +68,13 @@ export abstract class KafkaBasicConsumer {
 
   async connect(metadataOptions: any = {}) {
     return new Promise((resolve, reject) => {
-      this.consumer.connect(
-        metadataOptions,
-        (err: Error, data: any) => {
-          if (err) {
-            reject(err)
-          }
+      this.consumer.connect(metadataOptions, (err: Kafka.LibrdKafkaError, data: any) => {
+        if (err) {
+          reject(err)
+        }
 
-          resolve(data)
-        },
-      )
+        resolve(data)
+      })
     })
   }
 
@@ -113,7 +110,7 @@ export abstract class KafkaBasicConsumer {
   fetch(size: number): Promise<KafkaMessage[]> {
     // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
     return new Promise((resolve, reject) => {
-      return this.consumer.consume(size, (err: Error, messages: KafkaMessage[]) => {
+      return this.consumer.consume(size, (err: Kafka.LibrdKafkaError, messages: KafkaMessage[]) => {
         if (err) {
           return reject(err)
         }
@@ -212,25 +209,30 @@ export class KafkaAMOConsumer extends KafkaBasicConsumer {
 
     return new Promise<KafkaMessage[]>((resolve, reject) => {
       // This will keep going until it gets ERR__PARTITION_EOF or ERR__TIMED_OUT
-      return this.consumer.consume(options.size!, async (err: Error, messages: KafkaMessage[]) => {
-        if (this.dying || this.dead) {
-          reject(new ConnectionDeadError('Connection has been dead or is dying'))
-        }
-        if (err) {
-          reject(err)
-        }
+      return this.consumer.consume(
+        options.size!,
+        async (err: Kafka.LibrdKafkaError, messages: KafkaMessage[]) => {
+          if (this.dying || this.dead) {
+            reject(new ConnectionDeadError('Connection has been dead or is dying'))
+          }
+          if (err) {
+            reject(err)
+          }
+          try {
+            const results = await bluebird.map(
+              messages,
+              async (message: KafkaMessage) => {
+                return await Promise.resolve(cb(message))
+              },
+              { concurrency: options.concurrency! },
+            )
 
-        return bluebird
-          .map(
-            messages,
-            async (message: KafkaMessage) => {
-              return await Promise.resolve(cb(message))
-            },
-            { concurrency: options.concurrency! },
-          )
-          .then((results: any[]) => resolve(results))
-          .catch(e => reject(e))
-      })
+            resolve(results)
+          } catch (err) {
+            reject(err)
+          }
+        },
+      )
     })
   }
 }

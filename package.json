@@ -1,6 +1,6 @@
 {
   "name": "kfk",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "The high-level node kafka client based on node-rdkafka  .",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -29,7 +29,7 @@
   },
   "author": "joway",
   "peerDependencies": {
-    "node-rdkafka": "^2.7.4"
+    "node-rdkafka": "^2.8.1"
   },
   "dependencies": {
     "bluebird": "3.7.2",
@@ -45,7 +45,7 @@
     "@types/supertest": "2.0.9",
     "ava": "1.4.0",
     "coveralls": "^3.0.2",
-    "node-rdkafka": "^2.7.4",
+    "node-rdkafka": "^2.8.1",
     "nodemon": "2.0.3",
     "nyc": "^15.0.0",
     "sinon": "9.0.2",
