@@ -638,7 +638,7 @@ test('amo consumer with error fallback', async (t) => {
         }
       },
       {
-        size: 100,
+        size: TOTAL,
         concurrency: 100,
       },
     )
@@ -656,7 +656,7 @@ test('amo consumer with error fallback', async (t) => {
       repetition.push(pos)
     },
     {
-      size: 100,
+      size: TOTAL,
       concurrency: 100,
     },
   )
