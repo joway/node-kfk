@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@types/bluebird": "3.5.33",
-    "@types/lodash": "4.14.162",
+    "@types/lodash": "4.14.163",
     "@types/node": "^14.0.1",
     "@types/sinon": "9.0.8",
     "@types/supertest": "2.0.10",
