@@ -48,7 +48,7 @@
     "node-rdkafka": "^2.8.1",
     "nodemon": "2.0.6",
     "nyc": "^15.0.0",
-    "sinon": "9.2.0",
+    "sinon": "9.2.1",
     "supertest": "6.0.0",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",
